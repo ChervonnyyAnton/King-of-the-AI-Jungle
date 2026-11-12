@@ -1,0 +1,72 @@
+[
+  {
+    "participant_name": "Alice",
+    "path_id": "A1",
+    "most_valuable_part": "The Independent Sprint was really helpful and engaging. I learned a lot about debugging with AI.",
+    "what_to_improve": "The scoring rubric was confusing and some parts felt too complex.",
+    "ground_truth_sentiment": "positive"
+  },
+  {
+    "participant_name": "Bob",
+    "path_id": "D2",
+    "most_valuable_part": "Great instructor and well structured sessions. The tooling was effective.",
+    "what_to_improve": "Too rushed in the Showdown — needed more time for presentations.",
+    "ground_truth_sentiment": "positive"
+  },
+  {
+    "participant_name": "Carol",
+    "path_id": "F3",
+    "most_valuable_part": "Excellent content relevance and very practical examples.",
+    "what_to_improve": "Not enough time for the Architecture path tasks — needed more depth.",
+    "ground_truth_sentiment": "positive"
+  },
+  {
+    "participant_name": "Dave",
+    "path_id": "B2",
+    "most_valuable_part": "Fun and enjoyable workshop. Learned useful techniques for test design.",
+    "what_to_improve": "Tooling experience was frustrating — setup took too long and was difficult.",
+    "ground_truth_sentiment": "positive"
+  },
+  {
+    "participant_name": "Eve",
+    "path_id": "C1",
+    "most_valuable_part": "Informative session with great insights on CI/CD integration. The time management was excellent.",
+    "what_to_improve": "Could use more hands-on exercises for the CI/CD pipeline setup.",
+    "ground_truth_sentiment": "positive"
+  },
+  {
+    "participant_name": "Frank",
+    "path_id": "E2",
+    "most_valuable_part": "Amazing workshop — highly recommend to my team. The AI usage section was impressive.",
+    "what_to_improve": "The networking session felt disconnected from the main content.",
+    "ground_truth_sentiment": "positive"
+  },
+  {
+    "participant_name": "Grace",
+    "path_id": "A3",
+    "most_valuable_part": "Very helpful risk analysis guidance. Clear instructions throughout.",
+    "what_to_improve": "The peer review time was too short — we needed more time for deep feedback.",
+    "ground_truth_sentiment": "positive"
+  },
+  {
+    "participant_name": "Henry",
+    "path_id": "D3",
+    "most_valuable_part": "Productive session with excellent automation content. Learned about self-healing test suites.",
+    "what_to_improve": "The automated test generation could be more customizable.",
+    "ground_truth_sentiment": "positive"
+  },
+  {
+    "participant_name": "Ivy",
+    "path_id": "F1",
+    "most_valuable_part": "Great balance of theory and practice. The guided demo was very effective.",
+    "what_to_improve": "Overall excellent — maybe add more advanced scenarios for experienced practitioners.",
+    "ground_truth_sentiment": "positive"
+  },
+  {
+    "participant_name": "Jack",
+    "path_id": "B1",
+    "most_valuable_part": "Good introduction to token economy modeling. Useful for my role.",
+    "what_to_improve": "Too simple for my experience level. Wanted more advanced Agentic AI patterns.",
+    "ground_truth_sentiment": "neutral"
+  }
+]

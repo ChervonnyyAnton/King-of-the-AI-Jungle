@@ -1,0 +1,13 @@
+{
+  "name": "sandbox-pdf-generator",
+  "version": "1.0.0",
+  "description": "Configurable PDF Generator for QA Workshop",
+  "main": "mock/index.html",
+  "scripts": {
+    "start": "npx serve mock/",
+    "test": "echo \"No test specified yet - King of the Jungle\""
+  },
+  "keywords": ["sandbox", "pdf", "generator", "qa-workshop"],
+  "author": "Anton",
+  "license": "MIT"
+}

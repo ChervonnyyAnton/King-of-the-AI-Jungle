@@ -1,0 +1,41 @@
+{
+  "version": "1.0",
+  "description": "Curated sentiment keyword dictionary for King of the AI Jungle workshop feedback analysis.",
+  "categories": {
+    "positive": [
+      "exciting", "engaging", "insightful", "valuable", "informative",
+      "helpful", "clear", "well-organized", "fun", "enjoyable",
+      "great", "excellent", "amazing", "fantastic", "awesome",
+      "learned", "improved", "grew", "useful", "practical",
+      "appreciate", "recommend", "loved", "enjoyed", "productive",
+      "effective", "powerful", "creative", "innovative", "impressive"
+    ],
+    "negative": [
+      "confusing", "frustrating", "too long", "too short", "boring",
+      "difficult", "hard", "slow", "broken", "buggy",
+      "unclear", "disorganized", "rushed", "waste", "disappointing",
+      "problem", "issue", "error", "failed", "crashed",
+      "unfair", "unhelpful", "overwhelming", "too complex", "too simple",
+      "lacked", "missing", "needed more", "not enough", "could be better"
+    ],
+    "neutral": [
+      "adequate", "okay", "average", "standard", "normal",
+      "fair", "acceptable", "typical", "expected", "routine",
+      "neutral", "moderate", "reasonable", "sufficient", "basic"
+    ]
+  },
+  "phrases": {
+    "positive": [
+      "great experience", "well structured", "really helpful", "learned a lot",
+      "highly recommend", "great instructor", "very engaging", "perfect timing",
+      "excellent tooling", "awesome workshop", "best part", "clear instructions",
+      "productive session", "good balance", "solid content"
+    ],
+    "negative": [
+      "too confusing", "not enough time", "too rushed", "hard to follow",
+      "lack of examples", "needs improvement", "too complex", "not practical",
+      "unclear instructions", "disorganized flow", "wasted time",
+      "frustrating experience", "difficult setup", "confusing rubric"
+    ]
+  }
+}

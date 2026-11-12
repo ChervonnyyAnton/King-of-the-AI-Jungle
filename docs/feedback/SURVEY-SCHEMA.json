@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "workshop-feedback-survey",
+  "title": "King of the AI Jungle — Post-Workshop Feedback Survey",
+  "description": "Structured feedback survey for the King of the AI Jungle workshop. Collected during the wrap-up segment (02:45–03:00).",
+  "type": "object",
+  "required": [
+    "session_id",
+    "participant_name",
+    "path_id",
+    "jungle_title",
+    "content_relevance",
+    "instructor_effectiveness",
+    "time_management",
+    "tooling_experience",
+    "overall_value",
+    "most_valuable_part",
+    "what_to_improve"
+  ],
+  "properties": {
+    "session_id": {
+      "type": "string",
+      "description": "Unique identifier for the workshop session (e.g., '2026-11-10-morning').",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}-[a-z]+$"
+    },
+    "participant_name": {
+      "type": "string",
+      "description": "Participant's display name (anonymous allowed).",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "path_id": {
+      "type": "string",
+      "description": "Path ID from the 2-Axis model (A1–A4, B1–B4, C1–C4, D1–D4, E1–E4, F1–F4).",
+      "pattern": "^[A-F][1-4]$"
+    },
+    "jungle_title": {
+      "type": "string",
+      "description": "Participant's Jungle Title (e.g., 'Trail Explorer', 'Automation Wizard').",
+      "minLength": 1,
+      "maxLength": 50
+    },
+    "content_relevance": {
+      "type": "integer",
+      "description": "How relevant was the workshop content to your role? (1–5, where 1=Not relevant, 5=Extremely relevant).",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "instructor_effectiveness": {
+      "type": "integer",
+      "description": "How effective was the instructor? (1–5, where 1=Poor, 5=Excellent).",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "time_management": {
+      "type": "integer",
+      "description": "How well was the workshop time managed? (1–5, where 1=Very poor, 5=Excellent).",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "tooling_experience": {
+      "type": "integer",
+      "description": "How was your experience with the workshop tooling? (1–5, where 1=Very difficult, 5=Seamless).",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "overall_value": {
+      "type": "integer",
+      "description": "How would you rate the overall value of this workshop? (1–5, where 1=No value, 5=Exceptional value).",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "most_valuable_part": {
+      "type": "string",
+      "description": "What was the most valuable part of the workshop?",
+      "minLength": 5,
+      "maxLength": 500
+    },
+    "what_to_improve": {
+      "type": "string",
+      "description": "What should we improve for the next session?",
+      "minLength": 5,
+      "maxLength": 500
+    }
+  },
+  "additionalProperties": false
+}

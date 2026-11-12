@@ -1,0 +1,30 @@
+{
+  "meta": {
+    "source": "mock-api-corpus",
+    "generated_date": "2026-11-10",
+    "pii_free": true,
+    "description": "Data grid JSON fixture — 20 rows across 4 columns for Data Grid testing"
+  },
+  "data": [
+    { "Item": "Setup CI Pipeline", "Status": "Completed", "Priority": "High", "Owner": "CUST-0001" },
+    { "Item": "Write Test Cases", "Status": "Completed", "Priority": "High", "Owner": "CUST-0002" },
+    { "Item": "Implement Assertions", "Status": "In Progress", "Priority": "High", "Owner": "CUST-0003" },
+    { "Item": "Add Error Handling", "Status": "In Progress", "Priority": "Medium", "Owner": "CUST-0004" },
+    { "Item": "Cross-Browser Tests", "Status": "Not Started", "Priority": "Medium", "Owner": "CUST-0005" },
+    { "Item": "Performance Testing", "Status": "Not Started", "Priority": "Low", "Owner": "CUST-0006" },
+    { "Item": "Accessibility Audit", "Status": "Not Started", "Priority": "Medium", "Owner": "CUST-0007" },
+    { "Item": "Edge Case Suite", "Status": "Not Started", "Priority": "Medium", "Owner": "CUST-0008" },
+    { "Item": "Documentation Update", "Status": "Not Started", "Priority": "Low", "Owner": "CUST-0009" },
+    { "Item": "Peer Review Round 1", "Status": "Completed", "Priority": "High", "Owner": "CUST-0010" },
+    { "Item": "Fix Critical Bugs", "Status": "In Progress", "Priority": "Critical", "Owner": "CUST-0001" },
+    { "Item": "Fix High Bugs", "Status": "Not Started", "Priority": "High", "Owner": "CUST-0002" },
+    { "Item": "Fix Medium Bugs", "Status": "Not Started", "Priority": "Medium", "Owner": "CUST-0003" },
+    { "Item": "Regression Suite", "Status": "Not Started", "Priority": "High", "Owner": "CUST-0004" },
+    { "Item": "Security Scan", "Status": "Not Started", "Priority": "High", "Owner": "CUST-0005" },
+    { "Item": "Load Testing", "Status": "Not Started", "Priority": "Low", "Owner": "CUST-0006" },
+    { "Item": "Deployment Script", "Status": "Not Started", "Priority": "Medium", "Owner": "CUST-0007" },
+    { "Item": "Monitoring Setup", "Status": "Not Started", "Priority": "Low", "Owner": "CUST-0008" },
+    { "Item": "Incident Response Plan", "Status": "Not Started", "Priority": "Medium", "Owner": "CUST-0009" },
+    { "Item": "Final Sign-Off", "Status": "Not Started", "Priority": "High", "Owner": "CUST-0010" }
+  ]
+}

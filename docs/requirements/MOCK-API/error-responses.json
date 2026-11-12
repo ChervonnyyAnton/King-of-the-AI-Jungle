@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "source": "mock-api-corpus",
+    "generated_date": "2026-11-10",
+    "pii_free": true,
+    "description": "Standardized error response payloads for API testing"
+  },
+  "errors": {
+    "validation": {
+      "status": 400,
+      "error": "Bad Request",
+      "message": "The request body contains validation errors.",
+      "details": [
+        {
+          "field": "layout",
+          "message": "Invalid layout value. Must be one of: corporate, startup, clean.",
+          "received": "modern"
+        },
+        {
+          "field": "gridData",
+          "message": "gridData must be a JSON array.",
+          "received": "string"
+        },
+        {
+          "field": "header",
+          "message": "Header field is required and must be a non-empty string.",
+          "received": null
+        }
+      ],
+      "request_id": "req-err-0001"
+    },
+    "not_found": {
+      "status": 404,
+      "error": "Not Found",
+      "message": "The requested configuration does not exist.",
+      "details": [
+        {
+          "field": "config_id",
+          "message": "No configuration found with this ID.",
+          "received": "config-99999"
+        }
+      ],
+      "request_id": "req-err-0002"
+    },
+    "server_error": {
+      "status": 500,
+      "error": "Internal Server Error",
+      "message": "An unexpected error occurred while processing your request.",
+      "details": [
+        {
+          "field": "system",
+          "message": "Database connection pool exhausted. Retry after 30 seconds.",
+          "retry_after": 30
+        }
+      ],
+      "request_id": "req-err-0003"
+    },
+    "rate_limit": {
+      "status": 429,
+      "error": "Too Many Requests",
+      "message": "Rate limit exceeded. Please wait before making another request.",
+      "details": [
+        {
+          "field": "rate_limit",
+          "message": "Maximum 100 requests per minute per API key.",
+          "retry_after": 60
+        }
+      ],
+      "request_id": "req-err-0004"
+    },
+    "import_error": {
+      "status": 400,
+      "error": "Invalid Import",
+      "message": "The uploaded JSON file cannot be imported.",
+      "details": [
+        {
+          "field": "file",
+          "message": "JSON parse error: Unexpected token at line 5, column 10.",
+          "received": "malformed json"
+        }
+      ],
+      "request_id": "req-err-0005"
+    }
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "env": {
+    "MCP_GLAB_URL": "",
+    "MCP_ATLASSIAN_URL": "",
+    "MCP_XRAY_URL": "",
+    "MCP_DATASAVER_URL": "",
+    "MCP_GRAFANA_URL": ""
+  },
+  "provider": {
+    "adesso": {
+      "apiKey": "{YOUR_SOVEREIGN_KEY}",
+      "url": "{SOVEREIGN_URL}"
+    },
+    "ollama": {
+      "url": "http://localhost:11434"
+    }
+  },
+  "model": "adesso/qwen-3.6-35b-sovereign",
+  "small_model": "ollama/qwen3.5:9b-mlx",
+  "reasoning_model": "ollama/qwen3.5:9b-mlx",
+  "permission": {
+    "allow": ["fs", "bash"],
+    "deny": ["git", "curl", "ssh"]
+  },
+  "agents": {
+    "workshop-participant": {
+      "model": "adesso/qwen-3.6-35b-sovereign",
+      "small_model": "ollama/qwen3.5:9b-mlx",
+      "reasoning_model": "ollama/qwen3.5:9b-mlx",
+      "prompt": "@AGENTS.md",
+      "skills": ["jungle-prompter", "artifact-validator"],
+      "permission": {
+        "allow": ["fs", "bash"],
+        "deny": ["git", "curl", "ssh"]
+      }
+    }
+  },
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "~/Projects/Mine/King-of-the-AI-Jungle"]
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@anthropic/mcp-playwright"]
+    }
+  }
+}

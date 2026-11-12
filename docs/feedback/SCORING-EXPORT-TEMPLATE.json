@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "scoring-export-template",
+  "title": "King of the AI Jungle — Post-Workshop Scoring Export Template",
+  "description": "Template for instructors to export judging scores in standardized JSON format for growth report generation.",
+  "type": "object",
+  "required": ["workshop_date", "instructor", "participants"],
+  "properties": {
+    "workshop_date": {
+      "type": "string",
+      "description": "Workshop date in YYYY-MM-DD format."
+    },
+    "instructor": {
+      "type": "string",
+      "description": "Instructor name."
+    },
+    "participants": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["participant_id", "path_id"],
+        "properties": {
+          "participant_id": {
+            "type": "string",
+            "description": "Unique participant ID assigned at Day-0 (e.g., '2026-11-10-A1-01')."
+          },
+          "participant_name": {
+            "type": "string",
+            "description": "Participant's display name."
+          },
+          "path_id": {
+            "type": "string",
+            "pattern": "^[A-F][1-4]$"
+          },
+          "jungle_title": {
+            "type": "string"
+          },
+          "ai_usage": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5,
+            "description": "Judging score for AI Usage criterion."
+          },
+          "risk_analysis": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5,
+            "description": "Judging score for Risk Analysis criterion."
+          },
+          "test_plan": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5,
+            "description": "Judging score for Test Plan criterion."
+          },
+          "budget_tracking": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5,
+            "description": "Judging score for Budget Tracking criterion."
+          },
+          "peer_review": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5,
+            "description": "Judging score for Peer Review criterion."
+          },
+          "total": {
+            "type": "number",
+            "description": "Total score (sum of all criteria or average)."
+          }
+        }
+      }
+    }
+  }
+}

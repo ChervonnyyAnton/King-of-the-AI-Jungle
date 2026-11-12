@@ -1,0 +1,29 @@
+# opencode.json — Template
+
+> **⚠️ Template — create during workshop**  
+> This file is a template. Participants will configure their own `opencode.json` during the workshop setup.
+
+## Configuration Template
+
+```json
+{
+  "agents": {
+    "default": {
+      "model": "adesso/qwen-3.6-35b-sovereign",
+      "small_model": "ollama/llama3.2:3b",
+      "reasoning_model": "ollama/qwen3.5:9b-mlx"
+    }
+  },
+  "ai_hub_setup": {
+    "sovereign_model": "qwen-3.6-35b-sovereign",
+    "cloud_model": "gpt-4-turbo",
+    "budget_limit_usd": 50
+  }
+}
+```
+
+## Workshop Setup
+
+1. Copy this template to your project root: `cp opencode.json.template opencode.json`
+2. Follow `docs/tools/VS-CODE-AI-HUB-SETUP.md` for detailed configuration
+3. Validate with: `cat opencode.json | python3 -m json.tool`

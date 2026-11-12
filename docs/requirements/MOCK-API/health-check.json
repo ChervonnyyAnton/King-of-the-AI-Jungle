@@ -1,0 +1,27 @@
+{
+  "meta": {
+    "source": "mock-api-corpus",
+    "generated_date": "2026-11-10",
+    "pii_free": true,
+    "description": "Mock health check response simulating sandbox configurator service status"
+  },
+  "status": "healthy",
+  "service": "Sandbox PDF Configurator",
+  "version": "2.0.0",
+  "timestamp": "2026-11-10T12:00:00Z",
+  "uptime_seconds": 86400,
+  "dependencies": {
+    "browser_engine": "healthy",
+    "pdf_renderer": "healthy",
+    "json_parser": "healthy"
+  },
+  "features": {
+    "grid_enabled": true,
+    "export_enabled": true,
+    "import_enabled": true,
+    "print_enabled": true,
+    "debug_mode_available": true
+  },
+  "environment": "workshop-sandbox",
+  "health_check_id": "hc-0001"
+}

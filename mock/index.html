@@ -1,0 +1,2341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 
+      ⚠️ SANDBOX ISOLATION GUARD (Cycle 63: DXS-1)
+      This file MUST remain fully isolated from the host environment.
+      
+      RULES:
+      - No external API calls (no fetch(), XMLHttpRequest, WebSocket)
+      - No local file system access beyond FileReader.readAsText() for JSON import
+      - No iframe embedding without explicit sandbox="allow-scripts allow-same-origin"
+      - CSP directives are the primary isolation mechanism
+      
+      MIGRATION PATH: Replace 'unsafe-inline' with nonce-based CSP when a build step is added.
+      Current CSP: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-src 'none'; base-uri 'self'; object-src 'none'; form-action 'self';
+    -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-src 'none'; base-uri 'self'; object-src 'none'; form-action 'self';">
+    <title>Sandbox PDF Configurator v3.1.0-gamification</title>
+    <style>
+        :root {
+            --primary: #0d6efd;
+            --primary-hover: #0a58ca;
+            --bg: #f8f9fa;
+            --text: #212529;
+            --border: #dee2e6;
+            --success: #198754;
+            --danger: #dc3545;
+            --warning: #ffc107;
+            --font-main: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+            --debug-bg: #fff3cd;
+            --debug-border: #ffc107;
+            --grid-bg: #ffffff;
+            /* Jungle Theme (Cycles 201–210: UX-1) */
+            --jungle-primary: #2d6a4f;
+            --jungle-accent: #e9c46a;
+            --jungle-accent-secondary: #e76f51;
+            --jungle-dark: #1b4332;
+            --jungle-light: #f0f7f4;
+        }
+
+        body {
+            font-family: var(--font-main);
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 420px;
+            background: white;
+            border-right: 1px solid var(--border);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            overflow-y: auto;
+            box-shadow: 2px 0 8px rgba(0,0,0,0.05);
+            z-index: 10;
+        }
+
+        .main-area {
+            flex: 1;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-y: auto;
+            background: #e9ecef;
+            position: relative;
+        }
+
+        h1 { font-size: 1.4rem; margin: 0; color: var(--primary); }
+        h2 { font-size: 1rem; margin: 0 0 8px 0; color: #6c757d; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+        p { font-size: 0.9rem; color: #6c757d; margin: 0; }
+
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        label { font-size: 0.8rem; font-weight: 700; color: #495057; }
+        
+        input, select, textarea {
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
+        }
+        textarea { resize: vertical; min-height: 80px; }
+
+        .btn {
+            padding: 10px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-hover); }
+        
+        .btn-outline { background: transparent; border-color: var(--border); color: var(--text); }
+        .btn-outline:hover { background: #f8f9fa; }
+
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-danger:hover { background: #bb2d3b; }
+
+        .btn-success { background: var(--success); color: white; }
+        .btn-success:hover { background: #157347; }
+
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .btn-full { grid-column: span 2; }
+
+        /* Paper & Preview */
+        .paper {
+            background: white;
+            width: 210mm;
+            min-height: 297mm;
+            padding: 20mm;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+            max-width: 100%;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .content-header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid var(--primary); padding-bottom: 10px; overflow-wrap: break-word; max-height: 60px; }
+        .content-body { line-height: 1.6; white-space: pre-wrap; font-size: 11pt; overflow-wrap: break-word; max-height: 300px; overflow-y: auto; padding-right: 10px; margin-bottom: 20px; }
+        
+        /* Data Grid Styles */
+        .data-grid {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+        .data-grid th, .data-grid td {
+            border: 1px solid var(--border);
+            padding: 8px 12px;
+            text-align: left;
+        }
+        .data-grid th { background: #f8f9fa; font-weight: 600; }
+        .data-grid tr:nth-child(even) { background: #fdfdfd; }
+
+        .content-footer { text-align: center; margin-top: 40px; font-size: 0.8em; color: #adb5bd; border-top: 1px solid #eee; padding-top: 10px; }
+        .empty-state { display: none; text-align: center; color: #6c757d; padding: 40px; }
+
+        /* Debug Overlay */
+        .debug-active [data-testid] {
+            border: 2px dashed var(--debug-border) !important;
+            background-color: var(--debug-bg) !important;
+            position: relative;
+        }
+        .debug-active [data-testid]::after {
+            content: attr(data-testid);
+            position: absolute;
+            top: -15px;
+            left: 5px;
+            background: var(--debug-border);
+            color: #000;
+            font-size: 10px;
+            padding: 2px 4px;
+            border-radius: 2px;
+        }
+        .debug-active input, .debug-active select, .debug-active textarea, .debug-active button {
+            outline: 2px solid var(--primary) !important;
+            background-color: #e7f1ff !important;
+        }
+        .debug-active .grid-row {
+            border: 2px solid var(--primary) !important;
+            background: #f0f8ff !important;
+        }
+
+        /* Toast */
+        #toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 100; display: flex; flex-direction: column; gap: 10px; }
+        .toast {
+            background: #212529; color: white; padding: 12px 20px; border-radius: 8px;
+            font-size: 0.9rem; opacity: 0; transform: translateY(20px); transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        .toast.show { opacity: 1; transform: translateY(0); }
+        .toast.success { background: var(--success); }
+        .toast.error { background: var(--danger); }
+        .toast.warning { background: var(--warning); color: #000; }
+
+        /* Grid input validation styling */
+        #grid-data:invalid {
+            border-color: var(--danger);
+            box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.15);
+        }
+
+        /* Debug Panel Styles (DBG-1 through DBG-9) */
+        .debug-panel {
+            display: none;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 12px;
+            margin-top: 8px;
+            background: #f8f9fa;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .debug-panel.active { display: block; }
+        .debug-panel h3 { font-size: 0.85rem; margin: 0 0 8px 0; color: #495057; }
+        .debug-tab-bar { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+        .debug-tab {
+            padding: 4px 10px; border: 1px solid var(--border); border-radius: 4px;
+            font-size: 0.75rem; cursor: pointer; background: white; color: var(--text);
+        }
+        .debug-tab.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .debug-entry { font-size: 0.75rem; padding: 6px; border-bottom: 1px solid #eee; font-family: monospace; }
+        .debug-entry .timestamp { color: #6c757d; font-size: 0.65rem; }
+        .debug-entry .prompt-type { color: var(--primary); font-weight: 600; }
+        .debug-entry .prompt-text { color: #333; white-space: pre-wrap; max-height: 60px; overflow-y: auto; }
+        .debug-entry .response-text { color: var(--success); white-space: pre-wrap; max-height: 60px; overflow-y: auto; }
+
+        /* Hallucination Flag */
+        .hallucination-flag {
+            display: inline-block; background: var(--danger); color: white; font-size: 0.7rem;
+            padding: 2px 6px; border-radius: 3px; margin-left: 6px; cursor: help;
+            position: relative;
+        }
+        .hallucination-flag:hover::after {
+            content: attr(data-tooltip); position: absolute; bottom: 100%; left: 0;
+            background: #212529; color: white; padding: 6px 10px; border-radius: 4px;
+            font-size: 0.7rem; white-space: nowrap; z-index: 200; max-width: 300px;
+            white-space: normal; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        /* Resource Health Gauge */
+        .health-gauge { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+        .health-bar { flex: 1; height: 8px; background: #dee2e6; border-radius: 4px; overflow: hidden; }
+        .health-fill { height: 100%; border-radius: 4px; transition: width 0.5s, background 0.5s; }
+        .health-ok .health-fill { background: var(--success); }
+        .health-warn .health-fill { background: var(--warning); }
+        .health-critical .health-fill { background: var(--danger); }
+        .health-label { font-size: 0.75rem; font-weight: 600; min-width: 30px; text-align: right; }
+
+        /* Session Replay */
+        .replay-timeline { font-size: 0.75rem; }
+        .replay-event { padding: 4px 6px; border-left: 2px solid var(--border); margin-left: 10px; }
+        .replay-event:hover { border-left-color: var(--primary); background: #e7f1ff; }
+        .replay-controls { display: flex; gap: 4px; margin-top: 8px; }
+
+        /* Debugger Mode */
+        .debugger-controls { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+        .debugger-controls .btn { font-size: 0.75rem; padding: 4px 8px; }
+        .debugger-state { font-size: 0.75rem; background: white; padding: 8px; border-radius: 4px; margin-top: 8px; font-family: monospace; max-height: 200px; overflow-y: auto; }
+        .debugger-annotation { background: #fff3cd; border-left: 3px solid var(--warning); padding: 4px 8px; margin-top: 6px; font-size: 0.75rem; }
+
+        @media print {
+            body { background: white; overflow: visible; height: auto; display: block; }
+            .sidebar { display: none; }
+            .main-area { padding: 0; background: white; overflow: visible; height: auto; }
+            .paper {
+                width: 100%; min-height: auto; margin: 0; padding: 20mm;
+                box-shadow: none; border: none;
+            }
+            @page { size: A4; margin: 20mm; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            .debug-active [data-testid] { border: none !important; background: none !important; }
+            .debug-active [data-testid]::after { display: none; }
+            .debug-active input, .debug-active select, .debug-active textarea, .debug-active button {
+                outline: none !important;
+                background: none !important;
+            }
+        }
+    </style>
+
+        /* v3.0 — Mobile Responsiveness (Cycle 110: Sandbox-5) */
+        @media (max-width: 768px) {
+            body { flex-direction: column; overflow: auto; }
+            .sidebar {
+                width: 100%; height: auto; max-height: 45vh;
+                border-right: none; border-bottom: 1px solid var(--border);
+                padding: 12px; gap: 10px;
+            }
+            .sidebar.collapsed { max-height: 48px; overflow: hidden; }
+            .sidebar.collapsed > *:not(#sidebar-toggle):not(.sidebar-collapsed-only) { display: none; }
+            .main-area { padding: 16px; flex: none; }
+            .paper { width: 100%; min-height: auto; padding: 10mm; }
+            .hamburger-btn { display: flex !important; }
+            .btn, button { min-height: 44px; min-width: 44px; padding: 12px 16px; }
+            input, select, textarea { min-height: 44px; }
+            .debug-panel { width: 100% !important; max-height: 40vh; }
+            .sidebar-compact-hide { display: none !important; }
+        }
+        @media (max-width: 480px) {
+            .sidebar { padding: 8px; gap: 8px; }
+            h1 { font-size: 1.1rem; }
+            .btn-group { grid-template-columns: 1fr; }
+            .btn-full { grid-column: span 1; }
+            .paper { padding: 8mm; }
+            .content-header { font-size: 16pt; }
+            .content-body { font-size: 10pt; }
+        }
+
+        /* v3.0 — Collaboration UI (Cycles 101-103: Sandbox-1) */
+        .presence-bar {
+            display: flex; align-items: center; gap: 8px; padding: 6px 10px;
+            background: #f0f8ff; border: 1px solid #b8daff; border-radius: 6px;
+            font-size: 0.75rem; flex-wrap: wrap;
+        }
+        .presence-user {
+            display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px;
+            border-radius: 12px; font-size: 0.7rem; font-weight: 600;
+        }
+        .presence-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        .cursor-indicator {
+            position: absolute; width: 2px; height: 20px;
+            animation: blink 1s infinite; pointer-events: none; z-index: 50;
+            transition: left 0.3s ease, top 0.3s ease;
+        }
+        .cursor-indicator::before {
+            content: attr(data-user); position: absolute; top: -16px; left: 0;
+            font-size: 10px; white-space: nowrap; padding: 1px 4px; border-radius: 2px;
+            color: white;
+        }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        #collab-controls {
+            display: none; flex-direction: column; gap: 6px; padding: 8px;
+            background: #f8f9fa; border: 1px solid var(--border); border-radius: 6px;
+            font-size: 0.8rem;
+        }
+        #collab-controls label { font-size: 0.7rem; color: #6c757d; }
+        .collab-presets { display: flex; gap: 4px; flex-wrap: wrap; }
+        .collab-presets button { flex: 1; min-width: 60px; padding: 4px 6px; font-size: 0.7rem; }
+
+        /* Hamburger button for mobile */
+        .hamburger-btn {
+            display: none; position: fixed; top: 10px; left: 10px; z-index: 300;
+            width: 44px; height: 44px; background: white; border: 1px solid var(--border);
+            border-radius: 8px; align-items: center; justify-content: center;
+            font-size: 1.4rem; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        /* WCAG 2.1 AA — Skip Navigation (Cycle 210: UX-3) */
+        .skip-nav {
+            position: absolute; top: -100%; left: 0;
+            background: var(--jungle-dark); color: white;
+            padding: 8px 16px; z-index: 9999; font-size: 0.9rem;
+            text-decoration: none; border-radius: 0 0 6px 0;
+        }
+        .skip-nav:focus {
+            top: 0; outline: 3px solid var(--jungle-accent);
+            outline-offset: 2px;
+        }
+
+        /* WCAG 2.1 AA — Enhanced Focus for prefers-contrast (Cycle 210: UX-4) */
+        @media (prefers-contrast: more) {
+            :root {
+                --primary: #004080;
+                --border: #000;
+                --text: #000;
+            }
+            input:focus, select:focus, textarea:focus {
+                outline: 3px solid #000 !important;
+                box-shadow: 0 0 0 5px #fff, 0 0 0 7px #000 !important;
+            }
+            .btn:focus-visible, button:focus-visible {
+                outline: 3px solid #000 !important;
+                box-shadow: 0 0 0 5px #fff, 0 0 0 7px #000 !important;
+            }
+            .debug-active input, .debug-active select, .debug-active textarea, .debug-active button {
+                outline: 3px solid #000 !important;
+            }
+        }
+
+        /* WCAG 2.1 AA — High contrast focus for all interactive elements */
+        .btn:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible,
+        [tabindex]:focus-visible {
+            outline: 3px solid var(--jungle-primary) !important;
+            outline-offset: 2px !important;
+        }
+
+        /* ============================================================================
+           Second Brain — Knowledge Search Panel (Cycles 230+)
+           Client-side search across docs/ markdown files
+           ============================================================================ */
+        .second-brain {
+            border-top: 2px solid var(--warning);
+            margin-top: 8px;
+        }
+        .second-brain-header {
+            display: flex; align-items: center; gap: 6px;
+            cursor: pointer; user-select: none;
+            font-size: 0.85rem; font-weight: 700; color: var(--warning);
+            padding: 6px 0;
+        }
+        .second-brain-header .chevron {
+            transition: transform 0.2s; display: inline-block;
+            font-size: 0.7rem;
+        }
+        .second-brain-header.collapsed .chevron { transform: rotate(-90deg); }
+        .second-brain-body { overflow: hidden; transition: max-height 0.3s ease; }
+        .second-brain-body.collapsed { max-height: 0 !important; padding: 0; }
+        .second-brain-body.expanded { max-height: 600px; }
+        .search-input {
+            width: 100%; padding: 8px 10px; border: 1px solid var(--border);
+            border-radius: 6px; font-size: 0.85rem;
+            background: #fffbeb; border-color: #fbbf24;
+            box-sizing: border-box;
+        }
+        .search-input::placeholder { color: #b45309; font-style: italic; }
+        .search-input:focus {
+            outline: none; border-color: var(--warning);
+            box-shadow: 0 0 0 2px rgba(251,191,36,0.25);
+        }
+        .category-filters {
+            display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px;
+        }
+        .category-btn {
+            padding: 2px 8px; border: 1px solid var(--border); border-radius: 12px;
+            font-size: 0.65rem; cursor: pointer; background: white; color: #6b7280;
+            transition: all 0.15s;
+        }
+        .category-btn.active {
+            background: var(--warning); color: #000; border-color: var(--warning); font-weight: 600;
+        }
+        .category-btn:hover { background: #fef3c7; }
+        .search-stats {
+            font-size: 0.7rem; color: #6b7280; margin-top: 6px; padding: 4px 0;
+        }
+        .search-results {
+            max-height: 280px; overflow-y: auto; margin-top: 6px;
+        }
+        .search-result-item {
+            padding: 8px; border: 1px solid #e5e7eb; border-radius: 6px;
+            margin-bottom: 6px; background: #fff; cursor: pointer;
+            transition: background 0.15s;
+        }
+        .search-result-item:hover { background: #fffbeb; border-color: #fbbf24; }
+        .result-title {
+            font-size: 0.75rem; font-weight: 700; color: #111827;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .result-path {
+            font-size: 0.6rem; color: #6b7280; margin-top: 2px;
+            font-family: monospace;
+        }
+        .result-snippet {
+            font-size: 0.7rem; color: #374151; margin-top: 3px;
+            line-height: 1.4;
+        }
+        .result-snippet .highlight {
+            background: #fde68a; color: #000; padding: 0 2px; border-radius: 2px;
+        }
+        .result-category {
+            display: inline-block; font-size: 0.55rem; padding: 1px 5px;
+            border-radius: 8px; font-weight: 600; margin-top: 3px;
+        }
+        .cat-tools { background: #dbeafe; color: #1e40af; }
+        .cat-project { background: #d1fae5; color: #065f46; }
+        .cat-requirements { background: #ede9fe; color: #5b21b6; }
+        .cat-feedback { background: #fce7f3; color: #9d174d; }
+        .cat-simulations { background: #ffedd5; color: #9a3412; }
+        .cat-strategy { background: #fef3c7; color: #92400e; }
+        .cat-templates { background: #e0e7ff; color: #3730a3; }
+        .cat-docs { background: #f3e8ff; color: #6b21a8; }
+        .search-empty {
+            font-size: 0.75rem; color: #6b7280; text-align: center; padding: 16px 0;
+        }
+        .search-loading {
+            font-size: 0.75rem; color: #92400e; text-align: center; padding: 16px 0;
+        }
+        .scan-btn {
+            width: 100%; padding: 6px; font-size: 0.75rem;
+            border: 1px dashed var(--warning); border-radius: 6px;
+            background: #fffbeb; color: #92400e; cursor: pointer;
+            margin-top: 4px;
+        }
+        .scan-btn:hover { background: #fef3c7; }
+        .scan-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .brain-badge {
+            display: inline-block; font-size: 0.6rem; padding: 1px 6px;
+            background: var(--warning); color: #000; border-radius: 8px;
+            font-weight: 700; margin-left: auto;
+        }
+</head>
+
+<body>
+    <!-- WCAG 2.1 AA — Skip Navigation (Cycle 210: UX-3) -->
+    <a href="#main-content" class="skip-nav" aria-label="Skip to main content">Skip to main content</a>
+
+    <!-- v3.0: Mobile hamburger button -->
+    <button class="hamburger-btn" id="sidebar-toggle" aria-label="Toggle sidebar" onclick="toggleSidebar()">☰</button>
+
+<div class="sidebar" id="main-sidebar">    <!-- v3.0: Presence bar -->
+    <div id="presence-bar" class="presence-bar" style="display:none;" aria-label="Active collaborators">
+        <span style="font-weight:700;font-size:0.75rem;">👥 Live:</span>
+        <span class="presence-user" id="presence-self">
+            <span class="presence-dot" style="background:#0d6efd;"></span> You
+        </span>
+    </div>
+
+    <div>
+        <h1>⚙️ Sandbox Configurator</h1>
+        <p>Enterprise PDF Generator v3.0</p>
+    </div>
+
+    <div class="form-group">
+        <label for="layout-select">Layout Template</label>
+        <select id="layout-select" data-testid="layout-select" aria-label="Select layout template" onchange="updatePreview()" tabindex="0">
+            <option value="corporate">Corporate (Standard)</option>
+            <option value="startup">Modern (Startup)</option>
+            <option value="clean">Minimal (Clean)</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="header-text">Report Title</label>
+        <input type="text" id="header-text" value="Sandbox Project Report" data-testid="header-input" aria-label="Report title input" oninput="updatePreview()" tabindex="0">
+    </div>
+
+    <div class="form-group">
+        <label for="body-text">Body Content</label>
+        <textarea id="body-text" data-testid="body-input" aria-label="Body content input" oninput="updatePreview()" placeholder="Enter report details..." tabindex="0"></textarea>
+    </div>
+
+    <div class="form-group">
+        <label>
+            <input type="checkbox" id="enable-grid" data-testid="grid-toggle" onchange="toggleGridVisibility()" aria-label="Toggle data grid visibility" tabindex="0"> 
+            Enable Data Grid (Experimental)
+        </label>
+    </div>
+
+    <div id="grid-config" class="form-group" style="display: none; border: 1px solid var(--border); padding: 10px; border-radius: 6px;">
+        <label for="grid-data">Grid Data (JSON Format)</label>
+        <textarea id="grid-data" data-testid="grid-data-input" oninput="debouncedGridUpdate()" style="min-height: 100px; font-family: monospace; font-size: 0.8rem;" tabindex="0"></textarea>
+        <button class="btn btn-outline btn-full" onclick="addGridRow()" style="margin-top: 5px; font-size: 0.8rem;" tabindex="0">+ Add Row</button>
+    </div>
+
+    <div class="form-group">
+        <label for="footer-text">Footer Information</label>
+        <input type="text" id="footer-text" value="Confidential - Sandbox 2024" data-testid="footer-input" aria-label="Footer information input" oninput="updatePreview()" tabindex="0">
+    </div>
+
+    <hr style="border: 0; border-top: 1px solid var(--border); margin: 10px 0;">
+
+    <button class="btn btn-primary btn-full" data-testid="btn-print" onclick="triggerPrint()" aria-label="Generate PDF document" tabindex="0">
+        🖨 Generate PDF
+    </button>
+
+    <hr style="border: 0; border-top: 1px solid var(--border); margin: 10px 0;">
+
+    <div class="btn-group">
+        <button class="btn btn-outline" data-testid="btn-export" onclick="exportConfig()" aria-label="Export configuration as JSON" tabindex="0">⬇ Export JSON</button>
+        <button class="btn btn-outline" data-testid="btn-import" onclick="document.getElementById('file-input').click()" aria-label="Import configuration from JSON file" tabindex="0">⬆ Import JSON</button>
+        <input type="file" id="file-input" accept=".json" style="display: none;" onchange="importConfig(this)">
+    </div>
+    
+    <button class="btn btn-outline btn-full" data-testid="btn-reset" onclick="resetConfig()" style="margin-top: 10px; font-size: 0.8rem;" aria-label="Reset configuration to defaults" tabindex="0">
+        🔁 Reset Configuration
+    </button>
+
+    <hr style="border: 0; border-top: 1px solid var(--border); margin: 10px 0;">
+
+    <div class="btn-group">
+        <button class="btn btn-outline" data-testid="btn-debug" onclick="toggleDebug()" aria-label="Toggle debug mode" tabindex="0">🐛 Debug</button>
+        <button class="btn btn-outline" data-testid="btn-copy" onclick="copyToClipboard()" aria-label="Copy config to clipboard" tabindex="0">📋 Copy</button>
+    </div>
+
+    <button class="btn btn-outline btn-full" onclick="simulateError()" style="margin-top: 10px; font-size: 0.8rem; color: var(--danger);" aria-label="Simulate a system error" tabindex="0">
+        ⚠️ Simulate Failure
+    </button>
+    
+    <button class="btn btn-outline btn-full" onclick="clearConsole()" style="margin-top: 10px; font-size: 0.8rem; color: #6c757d;" aria-label="Clear console logs" tabindex="0">
+        🗑 Clear Console
+    </button>
+    <!-- v3.0: Collaboration Controls (Cycles 101-103: Sandbox-1) -->
+    <div id="collab-controls" class="sidebar-compact-hide">
+        <label style="font-weight:700;">👥 Collaboration</label>
+        <div style="display:flex;gap:4px;">
+            <button class="btn btn-success" style="flex:1;font-size:0.7rem;" onclick="CollabManager.start()">▶ Start</button>
+            <button class="btn btn-outline" style="flex:1;font-size:0.7rem;" onclick="CollabManager.stop()">⏹ Stop</button>
+            <button class="btn btn-outline" style="flex:1;font-size:0.7rem;" onclick="CollabManager.togglePause()">⏸ Pause</button>
+        </div>
+        <label>Collaborators:</label>
+        <div class="collab-presets">
+            <button class="btn btn-outline" style="font-size:0.7rem;" onclick="CollabManager.setPreset('standard')">Standard</button>
+            <button class="btn btn-outline" style="font-size:0.7rem;" onclick="CollabManager.setPreset('aggressive')">Aggressive</button>
+            <button class="btn btn-outline" style="font-size:0.7rem;" onclick="CollabManager.setPreset('collision')">Collision</button>
+        </div>
+    </div>
+
+    <!-- v3.0: Task Injection button -->
+    <button class="btn btn-outline btn-full" id="toggle-injection" onclick="toggleTaskInjection()" style="display:none; margin-top: 10px; font-size: 0.8rem; color: #dc3545;" aria-label="Toggle task injection panel">
+        🎲 Random Events
+    </button>
+
+    <!-- Second Brain — Knowledge Search Panel (Cycles 230+) -->
+    <div id="second-brain" class="second-brain" aria-label="Second Brain knowledge search">
+        <div class="second-brain-header" onclick="toggleSecondBrain()" role="button" tabindex="0" aria-expanded="true" onkeydown="if(event.key==='Enter')toggleSecondBrain()">
+            <span class="chevron">▼</span> 🧠 Second Brain
+            <span class="brain-badge" id="brain-file-count">0 docs</span>
+        </div>
+        <div class="second-brain-body expanded" id="brain-body">
+            <input type="text" class="search-input" id="brain-search" placeholder="🔍 Search knowledge base..." oninput="onBrainSearch()" onfocus="onBrainFocus()" aria-label="Search knowledge base">
+            <div class="category-filters" id="brain-categories">
+                <button class="category-btn active" onclick="filterCategory('all', this)">All</button>
+                <button class="category-btn" onclick="filterCategory('tools', this)">🔧 Tools</button>
+                <button class="category-btn" onclick="filterCategory('project', this)">📁 Project</button>
+                <button class="category-btn" onclick="filterCategory('requirements', this)">📋 Requirements</button>
+                <button class="category-btn" onclick="filterCategory('feedback', this)">💬 Feedback</button>
+                <button class="category-btn" onclick="filterCategory('simulations', this)">🎭 Simulations</button>
+                <button class="category-btn" onclick="filterCategory('strategy', this)">🎯 Strategy</button>
+                <button class="category-btn" onclick="filterCategory('templates', this)">📄 Templates</button>
+                <button class="category-btn" onclick="filterCategory('docs', this)">📚 Docs</button>
+            </div>
+            <div class="search-stats" id="brain-stats">⏳ Press "Scan All Docs" to index knowledge base...</div>
+            <button class="scan-btn" id="brain-scan-btn" onclick="scanKnowledgeBase()">📡 Scan All Docs</button>
+            <div class="search-results" id="brain-results"></div>
+        </div>
+    </div>
+
+
+    <!-- Debug Sidebar (visible only with ?debug=true or ?debugger-mode=true) -->
+    <div id="debug-sidebar" style="display: none; margin-top: 8px; border-top: 2px solid var(--primary); padding-top: 8px;">
+        <h2 style="font-size: 0.85rem; color: var(--primary); margin: 0 0 4px 0;">🐛 Debug Tools</h2>
+        <div class="debug-tab-bar">
+            <button class="debug-tab active" onclick="showDebugPanel('prompt-history')" tabindex="0">Prompt History</button>
+            <button class="debug-tab" onclick="showDebugPanel('session-replay')" tabindex="0">Session Replay</button>
+            <button class="debug-tab" onclick="showDebugPanel('hallucination')" tabindex="0">Hallucination</button>
+            <button class="debug-tab" onclick="showDebugPanel('resource')" tabindex="0">Resources</button>
+            <button class="debug-tab" id="debugger-tab" style="display: none;" onclick="showDebugPanel('debugger')" tabindex="0">Debugger</button>
+            <button class="debug-tab" id="injection-tab" style="display: none;" onclick="showDebugPanel('injection')" tabindex="0">🎲 Events</button>
+        </div>
+
+        <!-- Prompt History Panel -->
+        <div id="panel-prompt-history" class="debug-panel active">
+            <h3>📋 Prompt & Response History</h3>
+            <p style="font-size: 0.7rem; color: #6c757d;">Captures all AI prompts sent and responses received.</p>
+            <div id="prompt-log"></div>
+            <button class="btn btn-outline" onclick="exportPromptLog()" style="margin-top: 8px; font-size: 0.7rem; padding: 4px 8px;">⬇ Export Log</button>
+        </div>
+
+        <!-- Session Replay Panel -->
+        <div id="panel-session-replay" class="debug-panel">
+            <h3>🎬 Session Replay</h3>
+            <p style="font-size: 0.7rem; color: #6c757d;">Chronological event log of all user interactions.</p>
+            <div class="replay-controls">
+                <button class="btn btn-outline" onclick="replayPlay()" style="font-size: 0.7rem; padding: 3px 6px;">▶ Play</button>
+                <button class="btn btn-outline" onclick="replayPause()" style="font-size: 0.7rem; padding: 3px 6px;">⏸ Pause</button>
+                <button class="btn btn-outline" onclick="replayStepForward()" style="font-size: 0.7rem; padding: 3px 6px;">⏭ Step</button>
+                <button class="btn btn-outline" onclick="exportReplay()" style="font-size: 0.7rem; padding: 3px 6px;">⬇ Export</button>
+            </div>
+            <div id="replay-timeline" class="replay-timeline" style="margin-top: 8px;"></div>
+        </div>
+
+        <!-- Hallucination Detector Panel -->
+        <div id="panel-hallucination" class="debug-panel">
+            <h3>🔍 Hallucination Detector</h3>
+            <p style="font-size: 0.7rem; color: #6c757d;">Scans AI output against requirements for fabricated claims.</p>
+            <div id="hallucination-results" style="font-size: 0.75rem;"></div>
+            <div id="hallucination-summary" style="margin-top: 8px; font-size: 0.75rem;"></div>
+        </div>
+
+        <!-- Resource Monitor Panel -->
+        <div id="panel-resource" class="debug-panel">
+            <h3>📊 Resource Monitor</h3>
+            <div id="resource-status">
+                <div style="font-size: 0.75rem; margin-bottom: 4px;">Memory Usage</div>
+                <div class="health-gauge health-ok" id="memory-gauge">
+                    <div class="health-bar"><div class="health-fill" id="memory-fill" style="width: 0%"></div></div>
+                    <div class="health-label" id="memory-label">0%</div>
+                </div>
+                <div style="font-size: 0.75rem; margin-bottom: 4px; margin-top: 8px;">DOM Nodes</div>
+                <div class="health-gauge health-ok" id="dom-gauge">
+                    <div class="health-bar"><div class="health-fill" id="dom-fill" style="width: 0%"></div></div>
+                    <div class="health-label" id="dom-label">0</div>
+                </div>
+                <div style="font-size: 0.75rem; margin-bottom: 4px; margin-top: 8px;">Last Render</div>
+                <div class="health-gauge health-ok" id="render-gauge">
+                    <div class="health-bar"><div class="health-fill" id="render-fill" style="width: 0%"></div></div>
+                    <div class="health-label" id="render-label">0ms</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Debugger Mode Panel -->
+        <div id="panel-debugger" class="debug-panel">
+            <h3>🔬 Interactive Debugger</h3>
+            <p style="font-size: 0.7rem; color: #6c757d;">Step through participant AI reasoning flow.</p>
+            <div class="debugger-controls">
+                <button class="btn btn-outline" onclick="debuggerPause()" style="font-size: 0.7rem; padding: 3px 6px;">⏸ Pause</button>
+                <button class="btn btn-outline" onclick="debuggerResume()" style="font-size: 0.7rem; padding: 3px 6px;">▶ Resume</button>
+                <button class="btn btn-outline" onclick="debuggerStepForward()" style="font-size: 0.7rem; padding: 3px 6px;">⏭ Next</button>
+                <button class="btn btn-outline" onclick="debuggerStepBack()" style="font-size: 0.7rem; padding: 3px 6px;">⏮ Prev</button>
+                <button class="btn btn-outline" onclick="debuggerSelfHint()" style="font-size: 0.7rem; padding: 3px 6px;">💡 Self-Hint</button>
+            </div>
+            <div id="debugger-state" class="debugger-state">No session captured yet.</div>
+            <div id="debugger-annotation" style="display: none;"></div>
+        </div>
+        <!-- v3.0: Task Injection Panel (Cycles 108-109: Sandbox-4) -->
+        <div id="task-injection-panel" class="debug-panel" style="display:none; margin-top:8px; border-left:3px solid #dc3545;">
+            <h3 style="color:#dc3545;">🎲 Random Events</h3>
+            <select id="event-select" style="width:100%;padding:6px;margin-bottom:6px;background:white;border:1px solid var(--border);border-radius:4px;font-size:0.8rem;">
+                <option value="TrafficSpike">⚡ Traffic Spike</option>
+                <option value="DBLock">🔒 DB Lock</option>
+                <option value="NetworkFailure">💥 Network Failure</option>
+                <option value="DataCorruption">🗑 Data Corruption</option>
+                <option value="SuddenTraffic">📊 Sudden Traffic</option>
+                <option value="AutoInject">🎲 Random Event</option>
+            </select>
+            <button id="inject-btn" onclick="TaskInjection.inject()" style="width:100%;padding:8px;background:#dc3545;color:white;border:none;border-radius:4px;font-weight:bold;cursor:pointer;font-size:0.8rem;">Inject Event</button>
+            <div id="event-history" style="margin-top:8px;max-height:120px;overflow-y:auto;font-size:0.7rem;color:#666;border-top:1px solid #eee;padding-top:6px;"></div>
+            <button class="btn btn-outline" style="width:100%;margin-top:6px;font-size:0.7rem;" onclick="TaskInjection.clearHistory()">🗑 Clear History</button>
+        </div>
+
+    </div>
+
+    <div style="margin-top: auto; font-size: 0.75rem; color: #adb5bd; text-align: center;" aria-hidden="true">
+        King of the Jungle Demo<br>v3.1.0-gamification (Cycles 161–170)
+    </div>
+</div>
+
+<div class="main-area" id="main-content">
+    <div id="paper" class="paper" role="document">
+        <div id="preview-header" class="content-header" data-testid="preview-header" role="heading" aria-level="1"></div>
+        <div id="preview-grid" class="data-grid" data-testid="preview-grid" style="display: none;"></div>
+        <div id="preview-body" class="content-body" data-testid="preview-body" role="main"></div>
+        <div id="preview-footer" class="content-footer" data-testid="preview-footer" role="contentinfo"></div>
+        <div id="empty-state" class="empty-state" role="status">
+            <p>⚠️ No content to preview. Configure fields in the sidebar.</p>
+        </div>
+    </div>
+</div>
+
+<div id="toast-container" aria-live="polite" aria-atomic="true" role="status"></div>
+
+<script>
+    const DEFAULTS = {
+        SEED_VERSION: "2024-v3.1.0-gamification",
+        header: "Sandbox Project Report",
+        body: "Welcome to the King of the AI Jungle Workshop v3.0.
+
+New v3.0 features: real-time collaboration, dynamic events, mobile responsive.\n\nThis tool is designed to test your ability to validate configurations, dynamic data grids, and user flows.\n\n- Check layout changes\n- Test import/export\n- Validate print output\n- Analyze JSON structure",
+        footer: "Confidential - Sandbox 2024",
+        layout: "corporate",
+        gridEnabled: false,
+        gridData: [
+            { "Item": "QA Strategy", "Status": "In Progress", "Owner": "Tester A" },
+            { "Item": "Automation Setup", "Status": "Completed", "Owner": "SDET B" },
+            { "Item": "Risk Analysis", "Status": "Pending", "Owner": "Manager C" }
+        ]
+    };
+
+    // Enable Debug Mode if ?debug=true is in URL (DBG-8: Debug Mode Integration)
+    const urlParams = new URLSearchParams(window.location.search);
+    let debugMode = urlParams.get('debug') === 'true';
+    let debuggerMode = urlParams.get('debugger-mode') === 'true';
+
+    // ===== DBG-1: Prompt Tracing Module =====
+    const promptLog = []; // Stores {timestamp, type, prompt, response}
+    
+    function capturePrompt(type, promptText, responseText) {
+        // DBG-7: PII redaction
+        const redactedPrompt = redactPII(promptText);
+        const redactedResponse = redactPII(responseText || '');
+        
+        const entry = {
+            timestamp: new Date().toISOString(),
+            type: type,
+            prompt: redactedPrompt,
+            response: redactedResponse,
+            tokensEstimate: estimateTokens(redactedPrompt + redactedResponse)
+        };
+        promptLog.push(entry);
+        renderPromptHistory();
+        
+        if (debugMode) {
+            console.log(`📋 [Prompt] ${type}: "${redactedPrompt.substring(0, 100)}..."`, 
+                       `Tokens: ~${entry.tokensEstimate}`,
+                       `Response: "${redactedResponse.substring(0, 100)}..."`);
+        }
+    }
+
+    function estimateTokens(text) {
+        // Rough estimate: ~4 chars per token
+        return Math.ceil(text.length / 4);
+    }
+
+    function renderPromptHistory() {
+        const container = document.getElementById('prompt-log');
+        if (!container) return;
+        container.innerHTML = promptLog.slice().reverse().map((entry, i) => `
+            <div class="debug-entry">
+                <span class="timestamp">${new Date(entry.timestamp).toLocaleTimeString()}</span>
+                <span class="prompt-type">[${entry.type}]</span>
+                <div class="prompt-text">${escapeHtml(entry.prompt.substring(0, 200))}${entry.prompt.length > 200 ? '...' : ''}</div>
+                ${entry.response ? `<div class="response-text">↳ ${escapeHtml(entry.response.substring(0, 200))}${entry.response.length > 200 ? '...' : ''}</div>` : ''}
+                <div style="font-size: 0.65rem; color: #6c757d;">~${entry.tokensEstimate} tokens</div>
+            </div>
+        `).join('');
+    }
+
+    function exportPromptLog() {
+        const blob = new Blob([JSON.stringify(promptLog, null, 2)], {type: "application/json"});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = "prompt-history.json"; a.click();
+        URL.revokeObjectURL(url);
+        showToast("Prompt History Exported");
+    }
+
+    // ===== DBG-2: Session Replay Module =====
+    const sessionEvents = []; // Stores click, input, mutation events
+    let replayIndex = 0;
+    let replayPlaying = false;
+    let replayTimer = null;
+
+    function recordSessionEvent(type, detail) {
+        const entry = {
+            timestamp: new Date().toISOString(),
+            type: type,
+            detail: detail,
+            predicted: null // For DBG-9: "predict the outcome" pause point
+        };
+        sessionEvents.push(entry);
+        renderReplayTimeline();
+    }
+
+    function renderReplayTimeline() {
+        const container = document.getElementById('replay-timeline');
+        if (!container) return;
+        container.innerHTML = sessionEvents.slice().reverse().map((e, i) => `
+            <div class="replay-event">
+                <span class="timestamp">${new Date(e.timestamp).toLocaleTimeString()}</span>
+                ${e.type === 'ai-interaction' ? '🤖 AI' : '👆 Event'}: 
+                ${escapeHtml(String(e.detail).substring(0, 100))}
+            </div>
+        `).join('');
+    }
+
+    function replayPlay() {
+        if (replayPlaying) return;
+        replayPlaying = true;
+        replayIndex = 0;
+        showToast("Session Replay playing...");
+        replayTimer = setInterval(() => {
+            if (replayIndex >= sessionEvents.length) {
+                replayPause();
+                showToast("Session Replay complete");
+                return;
+            }
+            const event = sessionEvents[replayIndex];
+            console.log(`🎬 Replay [${replayIndex}/${sessionEvents.length}]: ${event.type}`);
+            replayIndex++;
+        }, 500);
+    }
+
+    function replayPause() {
+        replayPlaying = false;
+        clearInterval(replayTimer);
+        showToast("Session Replay paused");
+    }
+
+    function replayStepForward() {
+        if (replayIndex >= sessionEvents.length) return;
+        const event = sessionEvents[replayIndex];
+        console.log(`🎬 Replay Step [${replayIndex}/${sessionEvents.length}]: ${event.type}`);
+        replayIndex++;
+    }
+
+    function exportReplay() {
+        const blob = new Blob([JSON.stringify(sessionEvents, null, 2)], {type: "application/json"});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = "session-replay.json"; a.click();
+        URL.revokeObjectURL(url);
+        showToast("Session Replay Exported");
+    }
+
+    // ===== DBG-3: Hallucination Detector Module =====
+    const requirementKB = {}; // Stores file names and content hashes for fact-checking
+    const hallucinationFlags = []; // {claim, source, severity, explanation}
+
+    function initHallucinationDetector(requirementFiles) {
+        // Build a local knowledge base from requirement files
+        requirementFiles.forEach(file => {
+            requirementKB[file.name] = {
+                content: file.content,
+                tokens: file.content.length
+            };
+        });
+        if (debugMode) {
+            console.log(`🔍 Hallucination Detector initialized with ${requirementFiles.length} requirement files`);
+        }
+    }
+
+    function scanForHallucinations(text) {
+        if (!debugMode) return [];
+        const findings = [];
+        
+        // Scan for common fabrication patterns
+        const patterns = [
+            { pattern: /dark (mode|theme)/i, severity: 'high', explanation: 'The sandbox has no dark mode feature documented in requirements.' },
+            { pattern: /print (to|as) PDF/i, severity: 'medium', explanation: 'Print functionality uses browser\'s native window.print(), not a dedicated PDF engine.' },
+            { pattern: /export (to|as) (CSV|Excel|xlsx)/i, severity: 'high', explanation: 'Export only supports JSON format per the current specification.' },
+            { pattern: /import (from|from )CSV/i, severity: 'high', explanation: 'Import only supports JSON format per the current specification.' },
+            { pattern: /theme (switch|toggle|change)/i, severity: 'medium', explanation: 'Layout templates exist but there is no user-facing theme switch or toggle.' },
+            { pattern: /user (auth|login|login)/i, severity: 'high', explanation: 'The sandbox is a single-page configurator — no authentication is implemented.' },
+            { pattern: /real.time|websocket|live/i, severity: 'high', explanation: 'The sandbox is fully client-side with no real-time or WebSocket capability.' },
+        ];
+        
+        patterns.forEach(p => {
+            if (p.pattern.test(text)) {
+                findings.push({
+                    claim: p.pattern.exec(text)[0],
+                    severity: p.severity,
+                    explanation: p.explanation
+                });
+            }
+        });
+        
+        // Check against known requirement file content
+        Object.keys(requirementKB).forEach(filename => {
+            if (text.toLowerCase().includes(filename.toLowerCase().replace(/\.md$/, '')) && !requirementKB[filename].content.toLowerCase().includes(text.toLowerCase())) {
+                findings.push({
+                    claim: text.substring(0, 50),
+                    severity: 'low',
+                    explanation: `Claim references "${filename}" but content not found in that file.`
+                });
+            }
+        });
+        
+        // Record findings
+        findings.forEach(f => hallucinationFlags.push({
+            ...f,
+            timestamp: new Date().toISOString(),
+            detected: true
+        }));
+        
+        renderHallucinationResults(findings);
+        return findings;
+    }
+
+    function renderHallucinationResults(findings) {
+        const resultsEl = document.getElementById('hallucination-results');
+        const summaryEl = document.getElementById('hallucination-summary');
+        if (!resultsEl) return;
+        
+        if (findings.length === 0) {
+            resultsEl.innerHTML = '<div style="color: var(--success);">✅ No hallucinations detected in recent output.</div>';
+        } else {
+            resultsEl.innerHTML = findings.map(f => `
+                <div style="color: var(--danger); padding: 4px; border-left: 3px solid var(--danger); margin: 4px 0;">
+                    ⚠️ <strong>${f.severity.toUpperCase()}</strong>: "${escapeHtml(f.claim)}"
+                    <div style="font-size: 0.65rem; color: #6c757d; margin-top: 2px;">${escapeHtml(f.explanation)}</div>
+                </div>
+            `).join('');
+        }
+        
+        summaryEl.innerHTML = `<div>Total flags: ${hallucinationFlags.length} | Recent: ${findings.length}</div>`;
+    }
+
+    // ===== DBG-4: Resource Leak Detector Module =====
+    const RESOURCE_THRESHOLDS = {
+        memoryPercent: 80,
+        domNodes: 5000,
+        renderMs: 1000
+    };
+
+    function initResourceMonitor() {
+        // Start periodic monitoring
+        setInterval(updateResourceGauges, 2000);
+        console.log('📊 Resource Monitor initialized (updates every 2s)');
+    }
+
+    function updateResourceGauges() {
+        // Memory usage (Chrome-specific PerformanceMemoryInfo)
+        let memoryPercent = 0;
+        if (performance && performance.memory) {
+            memoryPercent = Math.round((performance.memory.usedJSHeapSize / performance.memory.jsHeapSizeLimit) * 100);
+        }
+        
+        // DOM node count
+        const domCount = document.getElementsByTagName('*').length;
+        
+        // Get last render time from debug log
+        const lastRender = window._lastRenderTime || 0;
+        
+        // Update gauges
+        updateGauge('memory', memoryPercent, RESOURCE_THRESHOLDS.memoryPercent, '%');
+        updateGauge('dom', domCount, RESOURCE_THRESHOLDS.domNodes, '', Math.min(domCount / RESOURCE_THRESHOLDS.domNodes * 100, 100));
+        updateGauge('render', lastRender, RESOURCE_THRESHOLDS.renderMs, 'ms', Math.min(lastRender / RESOURCE_THRESHOLDS.renderMs * 100, 100));
+    }
+
+    function updateGauge(name, value, threshold, unit, percentOverride) {
+        const fill = document.getElementById(`${name}-fill`);
+        const label = document.getElementById(`${name}-label`);
+        const gauge = document.getElementById(`${name}-gauge`);
+        if (!fill || !label || !gauge) return;
+        
+        const pct = percentOverride !== undefined ? percentOverride : Math.min((value / threshold) * 100, 100);
+        fill.style.width = pct + '%';
+        label.textContent = value + unit;
+        
+        if (pct < 60) {
+            gauge.className = 'health-gauge health-ok';
+        } else if (pct < 80) {
+            gauge.className = 'health-gauge health-warn';
+        } else {
+            gauge.className = 'health-gauge health-critical';
+            showToast(`⚠️ Resource threshold exceeded: ${name} at ${value}${unit}`, 'warning');
+        }
+    }
+
+    // ===== DBG-5: Interactive Debugger Mode Module =====
+    let debuggerSession = {
+        paused: false,
+        currentIndex: -1,
+        events: [],
+        annotations: []
+    };
+
+    function initDebuggerMode() {
+        debuggerSession.events = sessionEvents;
+        document.getElementById('debugger-tab').style.display = 'inline-block';
+        console.log('🔬 Debugger Mode initialized');
+    }
+
+    function debuggerPause() {
+        debuggerSession.paused = true;
+        showToast("Debugger paused — examine state before proceeding");
+    }
+
+    function debuggerResume() {
+        debuggerSession.paused = false;
+        showToast("Debugger resumed");
+    }
+
+    function debuggerStepForward() {
+        if (debuggerSession.paused) {
+            debuggerSession.currentIndex++;
+            renderDebuggerState();
+        }
+    }
+
+    function debuggerStepBack() {
+        if (debuggerSession.paused && debuggerSession.currentIndex > 0) {
+            debuggerSession.currentIndex--;
+            renderDebuggerState();
+        }
+    }
+
+    function debuggerSelfHint() {
+        // DBG-9: Self-hint mode — asks guiding questions instead of giving answers
+        const hints = [
+            "What error message did you see? Read it carefully.",
+            "Which step in the workflow might have gone wrong?",
+            "Check if the previous step's output matches what the next step expects.",
+            "Look at the DOM structure — does it match the expected schema?",
+            "Have you tried resetting the configuration and trying again?",
+        ];
+        const hint = hints[Math.floor(Math.random() * hints.length)];
+        showToast(`💡 Self-Hint: ${hint}`);
+    }
+
+    function renderDebuggerState() {
+        const stateEl = document.getElementById('debugger-state');
+        if (!stateEl) return;
+        
+        if (debuggerSession.currentIndex < 0) {
+            stateEl.innerHTML = '<div>Session paused at start. Press ⏭ Next to step through events.</div>';
+            return;
+        }
+        
+        const event = debuggerSession.events[debuggerSession.currentIndex];
+        if (!event) {
+            stateEl.innerHTML = '<div>End of session.</div>';
+            return;
+        }
+        
+        stateEl.innerHTML = `
+            <div><strong>Step ${debuggerSession.currentIndex + 1} / ${debuggerSession.events.length}</strong></div>
+            <div style="color: #6c757d; font-size: 0.65rem;">${new Date(event.timestamp).toLocaleTimeString()}</div>
+            <div>Type: ${event.type}</div>
+            <div>Detail: ${escapeHtml(String(event.detail).substring(0, 200))}</div>
+            ${event.predicted ? `<div style="color: var(--warning); margin-top: 4px;">⏭ Predictive Pause: ${escapeHtml(event.predicted)}</div>` : ''}
+        `;
+    }
+
+    // ===== Shared: PII Redaction (DBG-7) =====
+    function redactPII(text) {
+        if (!text) return '';
+        return text
+            .replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, '[EMAIL-REDACTED]')
+            .replace(/\b\d{3}[-.]?\d{3}[-.]?\d{4}\b/g, '[PHONE-REDACTED]')
+            .replace(/\b(?:SSN|Social Security|Employee ID|EMP-\d+)\b/gi, '[PII-REDACTED]');
+    }
+
+    // ===== Shared: Toggle Debug Mode (updated for DBG-8 integration) =====
+    function initDebug() {
+        if (debugMode) {
+            document.body.classList.add('debug-active', 'debug-mode');
+            console.log("🐛 Debug Mode Active: DOM elements are highlighted.");
+            document.getElementById('btn-debug').textContent = "🐛 Debug ON";
+            document.getElementById('btn-debug').classList.add('btn-primary');
+            document.getElementById('btn-debug').classList.remove('btn-outline');
+            document.getElementById('debug-sidebar').style.display = 'block';
+        }
+        if (debuggerMode) {
+            initDebuggerMode();
+        }
+    }
+
+    function toggleDebug() {
+        debugMode = !debugMode;
+        debuggerMode = !debugMode; // Enforce that debugger-mode requires URL param
+        if (debugMode) {
+            document.body.classList.add('debug-active', 'debug-mode');
+            console.log("🐛 Debug Mode Activated");
+            showToast("Debug Mode ON");
+            document.getElementById('btn-debug').textContent = "🐛 Debug ON";
+            document.getElementById('btn-debug').classList.add('btn-primary');
+            document.getElementById('btn-debug').classList.remove('btn-outline');
+            document.getElementById('debug-sidebar').style.display = 'block';
+            initResourceMonitor();
+            showDebugPanel('prompt-history');
+        } else {
+            document.body.classList.remove('debug-active', 'debug-mode');
+            console.log("🐛 Debug Mode Deactivated");
+            showToast("Debug Mode OFF");
+            document.getElementById('btn-debug').textContent = "🐛 Debug";
+            document.getElementById('btn-debug').classList.remove('btn-primary');
+            document.getElementById('btn-debug').classList.add('btn-outline');
+            document.getElementById('debug-sidebar').style.display = 'none';
+        }
+        document.getElementById('btn-debug').classList.toggle('btn-primary', debugMode);
+        document.getElementById('btn-debug').classList.toggle('btn-outline', !debugMode);
+    }
+
+    // ===== Debug Panel Tab Navigation =====
+    function showDebugPanel(panelId) {
+        document.querySelectorAll('.debug-panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.debug-tab').forEach(t => t.classList.remove('active'));
+        document.getElementById('panel-' + panelId).classList.add('active');
+        event.target.classList.add('active');
+    }
+
+    // ===== Existing Functions (preserved from original) =====
+    function showToast(msg, type = 'success') {
+        const container = document.getElementById('toast-container');
+        // Limit toast stack to 3 to prevent UI degradation
+        const existing = container.querySelectorAll('.toast:not(.show)').length;
+        while (existing >= 3) {
+            const oldest = container.querySelector('.toast:not(.show)');
+            if (oldest) oldest.remove();
+            else break;
+        }
+        const el = document.createElement('div');
+        el.className = `toast ${type}`;
+        el.innerText = msg;
+        container.appendChild(el);
+        setTimeout(() => el.classList.add('show'), 10);
+        setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 300); }, 3000);
+    }
+
+    // XSS prevention: escape HTML entities
+    function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.appendChild(document.createTextNode(str));
+        return div.innerHTML;
+    }
+
+    // Deterministic seed: compute a checksum of DEFAULTS for reproducibility (Cycle 65: DXS-3)
+    function computeChecksum(data) {
+        const str = JSON.stringify(data);
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            const char = str.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash |= 0;
+        }
+        return "seed-" + Math.abs(hash).toString(16);
+    }
+
+    let gridDirty = true; // Track whether grid data has changed since last render
+
+    function updatePreview() {
+        const renderStart = performance.now();
+        const header = document.getElementById('header-text').value.trim();
+        const body = document.getElementById('body-text').value.trim();
+        const footer = document.getElementById('footer-text').value.trim();
+        const layout = document.getElementById('layout-select').value;
+        const gridEnabled = document.getElementById('enable-grid').checked;
+        const gridInput = document.getElementById('grid-data').value.trim();
+
+        // Update Grid UI
+        const gridConfig = document.getElementById('grid-config');
+        gridConfig.style.display = gridEnabled ? 'block' : 'none';
+
+        let gridRows = [];
+        let gridError = false;
+        if (gridEnabled && gridInput) {
+            try {
+                gridRows = JSON.parse(gridInput);
+                if (!Array.isArray(gridRows)) throw new Error("Data must be an array");
+                gridDirty = true;
+            } catch (e) {
+                gridError = true;
+                showToast("Grid Data JSON Invalid", "error");
+            }
+        } else if (!gridEnabled) {
+            gridDirty = false;
+        }
+
+        // Render Grid with XSS-safe escaping and performance optimization
+        const gridEl = document.getElementById('preview-grid');
+        if (gridEnabled && gridRows.length > 0 && !gridError) {
+            if (gridDirty) {
+                let html = '<thead><tr>';
+                Object.keys(gridRows[0]).forEach(key => html += `<th>${escapeHtml(key)}</th>`);
+                html += '</tr></thead><tbody>';
+                gridRows.forEach(row => {
+                    html += '<tr class="grid-row">';
+                    Object.values(row).forEach(val => html += `<td>${escapeHtml(String(val))}</td>`);
+                    html += '</tr>';
+                });
+                html += '</tbody>';
+                gridEl.innerHTML = html;
+                gridDirty = false;
+            }
+            gridEl.style.display = 'table';
+            if (debugMode) {
+                const renderTime = performance.now() - renderStart;
+                window._lastRenderTime = renderTime;
+                console.log(`⚡ Grid render: ${renderTime.toFixed(1)}ms`);
+            }
+        } else if (gridEnabled && !gridError && gridInput === '') {
+            // Placeholder for empty grid (Cycle 44: Reliability)
+            gridEl.innerHTML = '<table class="data-grid"><tbody><tr><td style="text-align:center;color:#adb5bd;">No data loaded — paste JSON above</td></tr></tbody></table>';
+            gridEl.style.display = 'table';
+        } else {
+            gridEl.style.display = 'none';
+        }
+
+        // Update Header/Footer
+        document.getElementById('preview-header').textContent = header;
+        document.getElementById('preview-body').textContent = body;
+        document.getElementById('preview-footer').textContent = footer;
+
+        // Apply Styles
+        const paper = document.getElementById('paper');
+        const styles = {
+            'corporate': { font: 'Arial, sans-serif', align: 'justify', color: '#333', headerSize: '22pt', headerWeight: 'bold' },
+            'startup': { font: 'Courier New, monospace', align: 'left', color: '#111', headerSize: '24pt', headerWeight: 'normal' },
+            'clean': { font: 'Helvetica, sans-serif', align: 'center', color: '#555', headerSize: '18pt', headerWeight: '300' }
+        };
+        const s = styles[layout];
+        paper.style.fontFamily = s.font;
+        paper.style.textAlign = s.align;
+        paper.style.color = s.color;
+        document.getElementById('preview-header').style.fontSize = s.headerSize;
+        document.getElementById('preview-header').style.fontWeight = s.headerWeight;
+
+        // Empty State
+        const emptyState = document.getElementById('empty-state');
+        const hasContent = header || body || footer || (gridEnabled && gridRows.length > 0);
+        if (!hasContent) {
+            emptyState.style.display = 'block';
+            document.getElementById('preview-header').style.display = 'none';
+            document.getElementById('preview-body').style.display = 'none';
+            document.getElementById('preview-footer').style.display = 'none';
+            gridEl.style.display = 'none';
+        } else {
+            emptyState.style.display = 'none';
+            document.getElementById('preview-header').style.display = 'block';
+            document.getElementById('preview-body').style.display = 'block';
+            document.getElementById('preview-footer').style.display = 'block';
+        }
+        
+        // Track render time for resource monitor
+        if (debugMode && window._lastRenderTime === undefined) {
+            window._lastRenderTime = performance.now() - renderStart;
+        }
+    }
+
+    function triggerPrint() { 
+        if (document.getElementById('empty-state').style.display === 'block') {
+            showToast("Cannot print empty document", "error");
+            return;
+        }
+        showToast("Opening Print Dialog...", "success"); 
+        window.print(); 
+    }
+
+    function exportConfig() {
+        const gridInput = document.getElementById('grid-data').value.trim();
+        let gridData = [];
+        // Validate grid data before export (Cycle 43: Functional Suitability)
+        if (document.getElementById('enable-grid').checked && gridInput) {
+            try {
+                gridData = JSON.parse(gridInput);
+                if (!Array.isArray(gridData)) throw new Error("Data must be an array");
+            } catch (e) {
+                showToast("Cannot export: Grid data is invalid JSON", "error");
+                return;
+            }
+        }
+        const config = { 
+            meta: "Sandbox Config v2.0", 
+            header: document.getElementById('header-text').value, 
+            body: document.getElementById('body-text').value, 
+            footer: document.getElementById('footer-text').value, 
+            layout: document.getElementById('layout-select').value,
+            gridEnabled: document.getElementById('enable-grid').checked,
+            gridData: gridData
+        };
+        const blob = new Blob([JSON.stringify(config, null, 2)], {type: "application/json"});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = "config.json"; a.click();
+        URL.revokeObjectURL(url); showToast("Configuration Exported");
+    }
+
+    function importConfig(input) {
+        const file = input.files[0];
+        // Empty file / cancelled picker check (Cycle 44: Reliability)
+        if (!file) {
+            showToast("No file selected", "warning");
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const raw = JSON.parse(e.target.result);
+                let fieldCorrections = 0;
+                const headerVal = typeof raw.header === 'string' ? raw.header : (() => { fieldCorrections++; return DEFAULTS.header; })();
+                const bodyVal = typeof raw.body === 'string' ? raw.body : (() => { fieldCorrections++; return DEFAULTS.body; })();
+                const footerVal = typeof raw.footer === 'string' ? raw.footer : (() => { fieldCorrections++; return DEFAULTS.footer; })();
+                const layoutVal = ['corporate','startup','clean'].includes(raw.layout) ? raw.layout : (() => { fieldCorrections++; return DEFAULTS.layout; })();
+                const gridEnabledVal = raw.gridEnabled === true;
+                const gridDataVal = Array.isArray(raw.gridData) ? raw.gridData : (() => { fieldCorrections++; return DEFAULTS.gridData; })();
+                const config = {
+                    header: headerVal,
+                    body: bodyVal,
+                    footer: footerVal,
+                    layout: layoutVal,
+                    gridEnabled: gridEnabledVal,
+                    gridData: gridDataVal
+                };
+                document.getElementById('header-text').value = config.header;
+                document.getElementById('body-text').value = config.body;
+                document.getElementById('footer-text').value = config.footer;
+                document.getElementById('layout-select').value = config.layout;
+                document.getElementById('enable-grid').checked = config.gridEnabled;
+                document.getElementById('grid-data').value = JSON.stringify(config.gridData, null, 2);
+                updatePreview();
+                if (fieldCorrections > 0) {
+                    showToast(`Configuration loaded with ${fieldCorrections} field(s) corrected to defaults`, "warning");
+                } else {
+                    showToast("Configuration Loaded");
+                }
+            } catch (err) { 
+                console.error("JSON Import Error:", err);
+                showToast("Invalid JSON: " + err.message, "error"); 
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    function resetConfig() {
+        document.getElementById('header-text').value = DEFAULTS.header;
+        document.getElementById('body-text').value = DEFAULTS.body;
+        document.getElementById('footer-text').value = DEFAULTS.footer;
+        document.getElementById('layout-select').value = DEFAULTS.layout;
+        document.getElementById('enable-grid').checked = DEFAULTS.gridEnabled;
+        document.getElementById('grid-data').value = JSON.stringify(DEFAULTS.gridData, null, 2);
+        updatePreview(); showToast("Configuration Reset");
+    }
+
+    function toggleGridVisibility() {
+        const gridEnabled = document.getElementById('enable-grid').checked;
+        const gridConfig = document.getElementById('grid-config');
+        const gridData = document.getElementById('grid-data');
+        gridConfig.style.display = gridEnabled ? 'block' : 'none';
+        // Focus management (Cycle 45: Usability)
+        if (gridEnabled) {
+            gridData.focus();
+        } else {
+            document.getElementById('enable-grid').focus();
+        }
+        updatePreview();
+    }
+
+    // Debounced grid data update for performance (Cycle 47)
+    let gridDebounceTimer = null;
+    function debouncedGridUpdate() {
+        clearTimeout(gridDebounceTimer);
+        gridDebounceTimer = setTimeout(updatePreview, 200);
+    }
+
+    function addGridRow() {
+        const gridInput = document.getElementById('grid-data');
+        let data = [];
+        try {
+            if (gridInput.value.trim()) data = JSON.parse(gridInput.value);
+        } catch (e) {}
+        
+        data.push({ "New Item": "Value", "Status": "New", "Owner": "User" });
+        gridInput.value = JSON.stringify(data, null, 2);
+        updatePreview();
+    }
+
+    function copyToClipboard() {
+        const config = { meta: "Sandbox Config v2.0", header: document.getElementById('header-text').value, body: document.getElementById('body-text').value, footer: document.getElementById('footer-text').value, layout: document.getElementById('layout-select').value };
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(config, null, 2));
+        navigator.clipboard.writeText(dataStr).then(() => {
+            showToast("Config copied to clipboard!");
+        }, (err) => {
+            showToast("Failed to copy", "error");
+        });
+    }
+
+    function simulateError() {
+        showToast("Simulating Network Failure...", "warning");
+        setTimeout(() => {
+            showToast("ERROR: Failed to update preview. Connection reset.", "error");
+            console.error("Simulated Error: Network Timeout");
+        }, 1000);
+    }
+
+    function clearConsole() {
+        console.clear();
+        showToast("Console Cleared");
+    }
+
+    // ===== Event Capturing for Session Replay (DBG-2) =====
+    document.addEventListener('click', (e) => {
+        recordSessionEvent('click', `${e.target.tagName}#${e.target.id}(${e.target.className})`);
+    }, true);
+
+    document.addEventListener('input', (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+            recordSessionEvent('input', `${e.target.id}: ${String(e.target.value).substring(0, 100)}`);
+        }
+    }, true);
+
+    // ===== Simulate AI Interaction Capture =====
+    // In a real implementation, this would intercept fetch() calls to AI endpoints.
+    // For this sandbox, instructors call capturePrompt() manually when AI interactions occur.
+    function simulateAIInteraction(userPrompt, aiResponse, type = 'assistant') {
+        capturePrompt(type, userPrompt, aiResponse);
+        recordSessionEvent('ai-interaction', `AI ${type}: ${userPrompt.substring(0, 100)}`);
+        
+        // DBG-3: Scan AI output for hallucinations
+        if (aiResponse) {
+            const findings = scanForHallucinations(aiResponse);
+            if (findings.length > 0) {
+                const flag = document.createElement('span');
+                flag.className = 'hallucination-flag';
+                flag.setAttribute('data-tooltip', findings.map(f => `${f.severity}: ${f.explanation}`).join('\n'));
+                flag.textContent = `⚠️ ${findings.length} hallucination(s)`;
+                const previewBody = document.getElementById('preview-body');
+                if (previewBody) previewBody.appendChild(flag);
+                showToast(`⚠️ Hallucination detector: ${findings.length} potential hallucination(s) found`, 'warning');
+            }
+        }
+    }
+
+    // Defer init to next frame for faster perceived load time (Cycle 47: Performance)
+    requestAnimationFrame(() => {
+        initDebug();
+        updatePreview();
+    });
+
+    // =========================================================================
+    // AI Response Cache — IndexedDB for offline replay (Cycles 129–130: AI-SANDBOX-1)
+    // =========================================================================
+    // This cache stores AI-generated artifacts so participants can replay them
+    // when the AI Hub is unreachable. Per DXS-1, this is an opt-in feature
+    // documented in code comments. No PII is stored.
+    (function initOfflineCache() {
+        const DB_NAME = 'JungleCache';
+        const DB_VERSION = 1;
+        const STORE_NAME = 'ai_responses';
+
+        function openDB() {
+            return new Promise((resolve, reject) => {
+                const req = indexedDB.open(DB_NAME, DB_VERSION);
+                req.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains(STORE_NAME)) {
+                        db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+                    }
+                };
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => reject(req.error);
+            });
+        }
+
+        window.aiCache = {
+            // Store a generated artifact with a task identifier
+            async put(taskId, content) {
+                try {
+                    const db = await openDB();
+                    return new Promise((resolve, reject) => {
+                        const tx = db.transaction(STORE_NAME, 'readwrite');
+                        tx.objectStore(STORE_NAME).put({ id: taskId, content, timestamp: Date.now() });
+                        tx.oncomplete = () => resolve();
+                        tx.onerror = () => reject(tx.error);
+                    });
+                } catch (e) {
+                    console.warn('IndexedDB write failed (offline mode not supported):', e);
+                }
+            },
+            // Retrieve a stored artifact by task ID
+            async get(taskId) {
+                try {
+                    const db = await openDB();
+                    return new Promise((resolve, reject) => {
+                        const tx = db.transaction(STORE_NAME, 'readonly');
+                        const req = tx.objectStore(STORE_NAME).get(taskId);
+                        req.onsuccess = () => resolve(req.result ? req.result.content : null);
+                        req.onerror = () => reject(req.error);
+                    });
+                } catch (e) {
+                    console.warn('IndexedDB read failed (offline mode not supported):', e);
+                    return null;
+                }
+            },
+            // List all cached tasks
+            async list() {
+                try {
+                    const db = await openDB();
+                    return new Promise((resolve, reject) => {
+                        const tx = db.transaction(STORE_NAME, 'readonly');
+                        const req = tx.objectStore(STORE_NAME).getAll();
+                        req.onsuccess = () => resolve(req.result || []);
+                        req.onerror = () => reject(req.error);
+                    });
+                } catch (e) {
+                    console.warn('IndexedDB list failed:', e);
+                    return [];
+                }
+            },
+            // Clear all cached responses
+            async clear() {
+                try {
+                    const db = await openDB();
+                    return new Promise((resolve, reject) => {
+                        const tx = db.transaction(STORE_NAME, 'readwrite');
+                        tx.objectStore(STORE_NAME).clear();
+                        tx.oncomplete = () => resolve();
+                        tx.onerror = () => reject(tx.error);
+                    });
+                } catch (e) {
+                    console.warn('IndexedDB clear failed:', e);
+                }
+            }
+        };
+
+        // Check online/offline status and log
+        if (navigator.onLine) {
+            console.log('✅ AI Sandbox: Online mode — IndexedDB cache available for offline replay.');
+        } else {
+            console.log('⚠️ AI Sandbox: Offline mode — IndexedDB cache available for replaying previously cached responses.');
+        }
+    })();
+
+    // =========================================================================
+    // Gamification Module (Cycles 163–170)
+    // =========================================================================
+
+    // Leaderboard state (Cycle 163, 164)
+    const leaderboardState = {
+        participants: [
+            { name: "Alice", title: "Trail Explorer", badges: 2, kudos: 1, efficiency: 0.20, points: 60 },
+            { name: "Bob", title: "Mechanic", badges: 1, kudos: 2, efficiency: 0.15, points: 50 },
+            { name: "Carol", title: "Jungle Guide", badges: 3, kudos: 0, efficiency: 0.25, points: 65 },
+            { name: "Dave", title: "System Weaver", badges: 2, kudos: 1, efficiency: 0.18, points: 55 },
+            { name: "Eve", title: "Visionary", badges: 1, kudos: 0, efficiency: 0.22, points: 45 },
+        ],
+        addParticipant(name, title) {
+            this.participants.push({ name, title, badges: 0, kudos: 0, efficiency: 0.10, points: 10 });
+            this.sort();
+            this.render();
+        },
+        awardBadge(idx) {
+            if (idx >= 0 && idx < this.participants.length) {
+                this.participants[idx].badges++;
+                this.participants[idx].points += 15;
+                this.render();
+                showToast(`🏅 ${this.participants[idx].name} earned a badge! (+15 points)`);
+            }
+        },
+        awardKudos(idx) {
+            if (idx >= 0 && idx < this.participants.length) {
+                const p = this.participants[idx];
+                if (p.kudos < 5) {
+                    p.kudos++;
+                    p.points += 10;
+                    this.render();
+                    showToast(`❤️ ${p.name} earned Kudos! (+10 points)`);
+                } else {
+                    showToast(`${p.name} has reached max Kudos (5)!`, 'warning');
+                }
+            }
+        },
+        awardBadgeToTop() { this.awardBadge(0); },
+        awardKudosToTop() { this.awardKudos(0); },
+        sort() {
+            this.participants.sort((a, b) => b.points - a.points);
+        },
+        render() {
+            const tbody = document.getElementById('leaderboard-tbody');
+            if (!tbody) return;
+            tbody.innerHTML = this.participants.map((p, i) => `
+                <tr onclick="awardBadgeToParticipant(${i})" style="cursor:pointer;" title="Click to award badge">
+                    <td class="rank-1" aria-label="Rank ${i === 0 ? '1st' : i + 1}">${i === 0 ? '👑' : i + 1}</td>
+                    <td>${escapeHtml(p.name)}</td>
+                    <td style="font-size:0.7rem;">${escapeHtml(p.title)}</td>
+                    <td class="badge-icons" aria-label="${p.badges} badge${p.badges !== 1 ? 's' : ''}">${'🏅'.repeat(p.badges)}</td>
+                    <td class="kudos-icons" aria-label="${p.kudos} Kudo${p.kudos !== 1 ? 's' : ''}">${'❤️'.repeat(p.kudos)}</td>
+                    <td><strong>${p.points}</strong></td>
+                </tr>
+            `).join('');
+        },
+        reset() {
+            this.participants = [];
+            this.render();
+            showToast("Leaderboard reset");
+        }
+    };
+
+    // Step Gating state (Cycle 166)
+    const stepState = {
+        current: 0,
+        unlock(step) {
+            if (step <= this.current + 1) {
+                this.current = Math.max(this.current, step);
+                const content = document.getElementById(`step-content-${step}`);
+                if (content) {
+                    content.classList.remove('locked');
+                    content.classList.add('unlocked');
+                    content.innerHTML = '✅ Step ' + step + ' completed';
+                    showToast(`🔓 Step ${step} unlocked!`);
+                }
+            } else {
+                showToast(`🔒 Must complete Step ${step - 1} before unlocking Step ${step}`, 'warning');
+            }
+        },
+        isUnlocked(step) { return step <= this.current; }
+    };
+
+    // Boss Battle state (Cycle 168)
+    let bossBattleTimer = null;
+    let bossBattleSeconds = 900; // 15 minutes
+    let bossBattleActive = false;
+
+    function toggleBossBattle() {
+        bossBattleActive = !bossBattleActive;
+        const banner = document.getElementById('boss-battle-banner');
+        if (bossBattleActive) {
+            banner.classList.add('active');
+            showToast("💀 Boss Battle activated! 15 minutes on the clock.", "error");
+            bossBattleSeconds = 900;
+            bossBattleTimer = setInterval(() => {
+                bossBattleSeconds--;
+                const min = Math.floor(bossBattleSeconds / 60);
+                const sec = bossBattleSeconds % 60;
+                document.getElementById('boss-timer').textContent =
+                    `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+                if (bossBattleSeconds <= 0) {
+                    clearInterval(bossBattleTimer);
+                    bossBattleActive = false;
+                    banner.classList.remove('active');
+                    showToast("⏰ Boss Battle time's up! Monsters defeated... or not.", "warning");
+                }
+            }, 1000);
+        } else {
+            banner.classList.remove('active');
+            if (bossBattleTimer) clearInterval(bossBattleTimer);
+            showToast("Boss Battle ended.");
+        }
+    }
+
+    // UI Toggle Functions (Cycle 163)
+    function toggleLeaderboard() {
+        const body = document.getElementById('leaderboard-body');
+        const toggle = document.getElementById('lb-toggle');
+        body.classList.toggle('open');
+        toggle.textContent = body.classList.contains('open') ? '▲' : '▼';
+    }
+
+    function toggleStepGating() {
+        const body = document.getElementById('step-gating-body');
+        const toggle = document.getElementById('sg-toggle');
+        body.classList.toggle('open');
+        toggle.textContent = body.classList.contains('open') ? '▲' : '▼';
+    }
+
+    function unlockStep(step) { stepState.unlock(step); }
+
+    function awardBadgeToParticipant(idx) { leaderboardState.awardBadge(idx); }
+
+    function openAddParticipant() {
+        const name = prompt("Enter participant name:");
+        if (name) {
+            const title = prompt("Enter Jungle Title:", "Trail Explorer");
+            leaderboardState.addParticipant(name, title || "Trail Explorer");
+        }
+    }
+
+    function resetLeaderboard() {
+        if (confirm("Reset the leaderboard?")) {
+            leaderboardState.reset();
+        }
+    }
+
+    // Initialize leaderboard on page load (Cycle 163)
+    leaderboardState.render();
+
+    // ============================================================================
+    // v3.0: Mobile Sidebar Toggle (Cycle 110: Sandbox-5)
+    // ============================================================================
+    function toggleSidebar() {
+        const sidebar = document.getElementById('main-sidebar');
+        sidebar.classList.toggle('collapsed');
+    }
+
+    // ============================================================================
+    // v3.0: Collaboration Manager (Cycles 101-103: Sandbox-1)
+    // Simulated multi-user editing with cursor indicators and presence tracking
+    // ============================================================================
+    const CollabManager = {
+        running: false,
+        paused: false,
+        collaborators: [],
+        timers: [],
+        preset: 'standard',
+
+        presets: {
+            standard: { count: 3, textSpeed: 4 },
+            aggressive: { count: 5, textSpeed: 2 },
+            collision: { count: 3, textSpeed: 5, collision: true }
+        },
+
+        colors: ['#0d6efd', '#198754', '#dc3545', '#ffc107', '#6f42c1', '#20c997'],
+        names: ['SDET-A', 'SDET-B', 'QA-Lead', 'DevOps-X', 'Architect-Y'],
+
+        start() {
+            if (this.running) return;
+            this.running = true;
+            this.paused = false;
+            this.collaborators = [];
+
+            // Show presence bar and controls
+            document.getElementById('presence-bar').style.display = 'flex';
+            document.getElementById('collab-controls').style.display = 'flex';
+            document.getElementById('toggle-injection').style.display = 'block';
+
+            const settings = this.presets[this.preset];
+            const target = document.getElementById('body-text');
+
+            for (let i = 0; i < settings.count; i++) {
+                const color = this.colors[i % this.colors.length];
+                const name = this.names[i % this.names.length];
+
+                // Create cursor indicator
+                const cursorEl = document.createElement('div');
+                cursorEl.className = 'cursor-indicator';
+                cursorEl.style.background = color;
+                cursorEl.setAttribute('data-user', name);
+                target.parentElement.appendChild(cursorEl);
+
+                const collaborator = {
+                    name, color, cursorEl, index: i,
+                    pos: 0, chunkIdx: 0,
+                    chunks: ['Concurrent edit by ', name + ': ', ' Testing shared ', 'collaboration. ', 'Real-time ', 'multi-user. ', 'The sandbox ', 'simulates ', 'teamwork. ', '']
+                };
+                this.collaborators.push(collaborator);
+
+                // Add presence indicator
+                const presenceEl = document.createElement('span');
+                presenceEl.className = 'presence-user';
+                presenceEl.innerHTML = '<span class="presence-dot" style="background:' + color + ';"></span> ' + escapeHtml(name);
+                presenceEl.id = 'presence-' + i;
+                document.getElementById('presence-bar').appendChild(presenceEl);
+
+                // Start editing — append text every N ms
+                const editTimer = setInterval(() => {
+                    if (!this.running || this.paused) return;
+                    const chunk = collaborator.chunks[collaborator.chunkIdx % collaborator.chunks.length];
+                    collaborator.chunkIdx++;
+                    target.value += chunk;
+                    collaborator.pos += chunk.length;
+                    if (typeof updatePreview === 'function') updatePreview();
+
+                    // Move cursor position
+                    const rect = target.getBoundingClientRect();
+                    const cursorY = Math.min(collaborator.pos * 1.4, Math.max(rect.height - 30, 20));
+                    const cursorX = settings.collision
+                        ? (rect.width * 0.3)
+                        : (rect.width * 0.2 + (i * rect.width * 0.15));
+                    cursorEl.style.top = cursorY + 'px';
+                    cursorEl.style.left = cursorX + 'px';
+                }, settings.textSpeed * 100);
+                this.timers.push(editTimer);
+
+                // Blink cursor
+                const blinkTimer = setInterval(() => {
+                    cursorEl.style.opacity = cursorEl.style.opacity === '0.3' ? '1' : '0.3';
+                }, 500);
+                this.timers.push(blinkTimer);
+            }
+
+            console.log('👥 Collaboration started: ' + settings.count + ' collaborators');
+            showToast('Collaboration started: ' + settings.count + ' users', 'success');
+        },
+
+        stop() {
+            this.running = false;
+            this.paused = false;
+            this.timers.forEach(t => clearInterval(t));
+            this.timers = [];
+            this.collaborators.forEach(c => c.cursorEl.remove());
+            this.collaborators = [];
+            document.querySelectorAll('.presence-user:not(:first-child)').forEach(el => el.remove());
+            document.getElementById('presence-bar').style.display = 'none';
+            document.getElementById('collab-controls').style.display = 'none';
+            console.log('👥 Collaboration stopped');
+        },
+
+        togglePause() {
+            this.paused = !this.paused;
+            showToast(this.paused ? 'Collaboration paused' : 'Collaboration resumed', 'warning');
+        },
+
+        setPreset(name) {
+            this.preset = name;
+            if (this.running) {
+                this.stop();
+                this.start();
+            }
+            showToast('Preset: ' + name, 'success');
+        }
+    };
+
+    // ============================================================================
+    // v3.0: Dynamic Task Injection (Cycles 108-109: Sandbox-4)
+    // Instructor can push random events to the sandbox during workshops
+    // ============================================================================
+    const TaskInjection = {
+        history: [],
+        maxHistory: 20,
+        injecting: false,
+
+        events: {
+            TrafficSpike: function() {
+                showToast('⚡ Traffic Spike: High-frequency updates!', 'warning');
+                let count = 0;
+                const max = 50;
+                const interval = setInterval(() => {
+                    if (count >= max || !TaskInjection.injecting) {
+                        clearInterval(interval);
+                        showToast('⚡ Traffic spike ended', 'success');
+                        return;
+                    }
+                    if (typeof updatePreview === 'function') updatePreview();
+                    count++;
+                }, 200);
+            },
+            DBLock: function() {
+                showToast('🔒 DB Lock: Grid frozen for 5 seconds', 'error');
+                const gridToggle = document.getElementById('enable-grid');
+                if (gridToggle) gridToggle.disabled = true;
+                setTimeout(() => {
+                    if (gridToggle) gridToggle.disabled = false;
+                    showToast('🔒 DB Lock released', 'success');
+                }, 5000);
+            },
+            NetworkFailure: function() {
+                const pattern = ['Network OK', 'Retrying...', 'Connection reset', 'Timeout', 'Network OK'];
+                pattern.forEach((msg, i) => {
+                    setTimeout(() => showToast(msg, i === pattern.length - 1 ? 'success' : 'warning'), i * 800);
+                });
+            },
+            DataCorruption: function() {
+                const gridInput = document.getElementById('grid-data');
+                if (gridInput && !gridInput.dataset.corrupted) {
+                    gridInput.dataset.corrupted = 'true';
+                    gridInput.value = '{"broken": true, "data": [1, "unterminated';
+                    if (typeof updatePreview === 'function') updatePreview();
+                    showToast('🗑 Data corruption detected!', 'error');
+                    setTimeout(() => {
+                        delete gridInput.dataset.corrupted;
+                        if (typeof DEFAULTS !== 'undefined') {
+                            gridInput.value = JSON.stringify(DEFAULTS.gridData, null, 2);
+                        }
+                        if (typeof updatePreview === 'function') updatePreview();
+                        showToast('🗑 Data restored to defaults', 'success');
+                    }, 5000);
+                }
+            },
+            SuddenTraffic: function() {
+                const gridInput = document.getElementById('grid-data');
+                let data = [];
+                try { data = JSON.parse(gridInput.value); } catch(e) {
+                    data = typeof DEFAULTS !== 'undefined' ? DEFAULTS.gridData : [];
+                }
+                for (let i = 0; i < 50; i++) {
+                    data.push({
+                        "Task": "Auto-generated #" + (data.length + 1),
+                        "Status": ["Open", "In Progress", "Done"][Math.floor(Math.random() * 3)],
+                        "Owner": ["User " + Math.floor(Math.random() * 20), "Bot"][Math.floor(Math.random() * 2)]
+                    });
+                }
+                gridInput.value = JSON.stringify(data, null, 2);
+                if (typeof updatePreview === 'function') updatePreview();
+                showToast('📊 Sudden traffic: Added 50 rows to grid', 'warning');
+            }
+        },
+
+        randomEvents: ['TrafficSpike', 'DBLock', 'NetworkFailure', 'DataCorruption', 'SuddenTraffic'],
+
+        inject() {
+            const select = document.getElementById('event-select');
+            const event = select.value === 'AutoInject'
+                ? this.randomEvents[Math.floor(Math.random() * this.randomEvents.length)]
+                : select.value;
+
+            this.injecting = true;
+            this.history.unshift({
+                ts: new Date().toISOString().slice(11, 19),
+                name: event
+            });
+            if (this.history.length > this.maxHistory) this.history.pop();
+            this.updateHistoryDisplay();
+
+            if (this.events[event]) {
+                this.events[event]();
+            }
+        },
+
+        logEvent(name) {
+            this.history.unshift({
+                ts: new Date().toISOString().slice(11, 19),
+                name: name
+            });
+            if (this.history.length > this.maxHistory) this.history.pop();
+            this.updateHistoryDisplay();
+        },
+
+        clearHistory() {
+            this.history = [];
+            this.updateHistoryDisplay();
+        },
+
+        updateHistoryDisplay() {
+            const container = document.getElementById('event-history');
+            if (!container) return;
+            container.innerHTML = this.history.map(e =>
+                '<div class="event-entry"><span class="event-time">[' + escapeHtml(e.ts) + ']</span> <span class="event-name">' + escapeHtml(e.name) + '</span></div>'
+            ).join('');
+        }
+    };
+
+    function toggleTaskInjection() {
+        const panel = document.getElementById('task-injection-panel');
+        panel.classList.toggle('visible');
+    }
+
+    // BroadcastChannel for cross-tab event injection (instructor tab ↔ sandbox tab)
+    let eventBus = null;
+    if (typeof BroadcastChannel !== 'undefined') {
+        try {
+            eventBus = new BroadcastChannel('sandbox-events');
+            eventBus.onmessage = (event) => {
+                if (event.data && TaskInjection.events[event.data.type]) {
+                    TaskInjection.logEvent(event.data.type);
+                    TaskInjection.events[event.data.type]();
+                }
+            };
+        } catch(e) { /* BroadcastChannel not supported */ }
+    }
+
+    // ============================================================================
+    // Second Brain — Knowledge Search Engine (Cycles 230+)
+    // Client-side full-text search across docs/ markdown files
+    // ============================================================================
+    
+    // ── In-memory knowledge index ──
+    const KnowledgeIndex = {
+        files: [],          // { path, category, title, content, lineCount }
+        indexed: false,
+        currentCategory: 'all',
+        pendingRequests: 0,
+        
+        // Known doc categories for path mapping
+        CATEGORIES: {
+            'tools':        ['docs/tools', 'tools'],
+            'project':      ['docs/project', 'docs/project/TICKETS'],
+            'requirements': ['docs/requirements', 'docs/requirements/TICKETS', 'docs/requirements/MOCK-API'],
+            'feedback':     ['docs/feedback'],
+            'simulations':  ['docs/simulations'],
+            'strategy':     ['docs/strategy'],
+            'templates':    ['docs/templates'],
+            'docs':         ['docs/docs', 'docs/dev', 'docs/ci'],
+        },
+
+        /** Discover and index all markdown files */
+        async scan() {
+            if (this.indexed) return this.files;
+            
+            this.setUI('loading', '📡 Scanning docs/ for markdown files...');
+            
+            // Step 1: List directories to discover files
+            const dirs = Object.values(this.CATEGORIES).flat();
+            const discovered = [];
+            
+            // Try to list each directory via fetch (server must support directory listing or we read known paths)
+            for (const dir of dirs) {
+                try {
+                    const resp = await fetch(dir + '/');
+                    if (resp.ok) {
+                        const html = await resp.text();
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+                        const links = doc.querySelectorAll('a[href]');
+                        links.forEach(a => {
+                            const href = a.getAttribute('href');
+                            if (href && href.endsWith('.md') && !href.startsWith('.') && !href.includes('/')) {
+                                discovered.push(dir + '/' + href);
+                            }
+                        });
+                    }
+                } catch(e) {
+                    // Directory listing not supported — will discover on first search
+                }
+            }
+            
+            // If directory listing worked, fetch content for each file
+            if (discovered.length > 0) {
+                await this._loadFiles(discovered);
+            }
+            
+            this.indexed = true;
+            const count = this.files.length;
+            document.getElementById('brain-file-count').textContent = count + ' docs';
+            this.setUI('ready', '✅ Indexed ' + count + ' documents across ' + Object.keys(this.CATEGORIES).length + ' categories');
+            document.getElementById('brain-scan-btn').style.display = 'none';
+            return this.files;
+        },
+
+        /** Load file content from URLs */
+        async _loadFiles(urls) {
+            const batchSize = 20; // Load in batches to avoid overwhelming the server
+            for (let i = 0; i < urls.length; i += batchSize) {
+                const batch = urls.slice(i, i + batchSize);
+                await Promise.all(batch.map(url => this._loadFile(url)));
+            }
+        },
+
+        /** Fetch and index a single markdown file */
+        async _loadFile(url) {
+            try {
+                const resp = await fetch(url);
+                if (!resp.ok) return;
+                const content = await resp.text();
+                const path = url;
+                const category = this._detectCategory(path);
+                const title = this._extractTitle(content) || path.split('/').pop().replace(/\.md$/, '').replace(/-/g, ' ');
+                
+                this.files.push({
+                    path: path,
+                    category: category,
+                    title: title,
+                    content: content,
+                    lineCount: content.split('\n').length
+                });
+            } catch(e) {
+                // File failed to load — skip silently
+            }
+        },
+
+        /** Detect category from file path */
+        _detectCategory(path) {
+            for (const [cat, prefixes] of Object.entries(this.CATEGORIES)) {
+                if (prefixes.some(p => path.startsWith(p))) return cat;
+            }
+            return 'unknown';
+        },
+
+        /** Extract first H1 as title */
+        _extractTitle(content) {
+            const match = content.match(/^#\s+(.+)$/m);
+            return match ? match[1].trim() : null;
+        },
+
+        /** Search indexed files by keyword */
+        search(query) {
+            if (!this.indexed) return [];
+            
+            const q = query.toLowerCase().trim();
+            if (!q) return [];
+            
+            // Filter by category
+            let files = this.currentCategory === 'all' 
+                ? this.files 
+                : this.files.filter(f => f.category === this.currentCategory);
+            
+            // Full-text search across all content
+            const results = [];
+            const terms = q.split(/\s+/);
+            
+            for (const file of files) {
+                const contentLower = file.content.toLowerCase();
+                let score = 0;
+                let matchingTerms = [];
+                
+                for (const term of terms) {
+                    if (!term) continue;
+                    
+                    // Exact title match (highest priority)
+                    if (file.title.toLowerCase().includes(term)) {
+                        score += 10;
+                        matchingTerms.push(term);
+                    }
+                    
+                    // Content occurrences
+                    let count = 0;
+                    let idx = 0;
+                    while ((idx = contentLower.indexOf(term, idx)) !== -1) {
+                        count++;
+                        idx += term.length;
+                    }
+                    
+                    if (count > 0) {
+                        score += count;
+                        matchingTerms.push(term);
+                    }
+                }
+                
+                if (score > 0) {
+                    // Extract snippet with context around first match
+                    const snippet = this._extractSnippet(file.content, terms[0], 80);
+                    
+                    results.push({
+                        title: file.title,
+                        path: file.path,
+                        category: file.category,
+                        score: score,
+                        snippet: snippet,
+                        lineCount: file.lineCount
+                    });
+                }
+            }
+            
+            // Sort by score descending
+            results.sort((a, b) => b.score - a.score);
+            
+            // Limit to top 20 results for performance
+            return results.slice(0, 20);
+        },
+
+        /** Extract a snippet of text around the search term */
+        _extractSnippet(content, term, maxLen) {
+            const idx = content.toLowerCase().indexOf(term.toLowerCase());
+            if (idx === -1) return content.substring(0, maxLen) + '...';
+            
+            // Find line boundaries
+            let start = content.lastIndexOf('\n', idx - maxLen / 2);
+            start = start === -1 ? 0 : start + 1;
+            
+            let end = content.indexOf('\n', idx + maxLen);
+            end = end === -1 ? content.length : end;
+            
+            let snippet = content.substring(start, end);
+            
+            // Highlight matching term
+            try {
+                const regex = new RegExp('(' + this._escapeRegex(term) + ')', 'gi');
+                snippet = snippet.replace(regex, '<span class="highlight">$1</span>');
+            } catch(e) {
+                // Escape failed — use raw snippet
+            }
+            
+            return snippet;
+        },
+
+        /** Escape special regex characters */
+        _escapeRegex(str) {
+            return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        },
+
+        /** Set UI state */
+        setUI(state, message) {
+            const stats = document.getElementById('brain-stats');
+            const results = document.getElementById('brain-results');
+            
+            if (state === 'loading') {
+                stats.textContent = '⏳ ' + message;
+                results.innerHTML = '<div class="search-loading">🔄 Loading...</div>';
+            } else if (state === 'ready') {
+                stats.textContent = message;
+                results.innerHTML = '';
+            } else if (state === 'results') {
+                stats.textContent = message;
+            }
+        },
+
+        /** Render search results */
+        renderResults(results, query) {
+            const container = document.getElementById('brain-results');
+            const stats = document.getElementById('brain-stats');
+            
+            if (results.length === 0) {
+                stats.textContent = '🔍 No results found for "' + query + '"';
+                container.innerHTML = '<div class="search-empty">Try different keywords or check category filters.</div>';
+                return;
+            }
+            
+            stats.textContent = '📊 ' + results.length + ' result' + (results.length !== 1 ? 's' : '') + ' for "' + query + '"';
+            
+            container.innerHTML = results.map(r => this._renderResultItem(r)).join('');
+        },
+
+        /** Render a single result item */
+        _renderResultItem(r) {
+            const catClass = 'cat-' + (r.category === 'unknown' ? 'tools' : r.category);
+            const catLabel = r.category.charAt(0).toUpperCase() + r.category.slice(1);
+            
+            return `
+                <div class="search-result-item" onclick="openDocument('${r.path}')" title="${this._escapeHtml(r.path)}">
+                    <div class="result-title">${this._escapeHtml(r.title)}</div>
+                    <div class="result-path">${this._escapeHtml(r.path)}</div>
+                    <div class="result-snippet">${r.snippet}</div>
+                    <span class="result-category ${catClass}">${catLabel} · ${r.lineCount} lines</span>
+                </div>
+            `;
+        },
+
+        _escapeHtml(str) {
+            return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        }
+    };
+
+    /** Toggle Second Brain panel open/close */
+    function toggleSecondBrain() {
+        const header = document.querySelector('.second-brain-header');
+        const body = document.getElementById('brain-body');
+        header.classList.toggle('collapsed');
+        body.classList.toggle('collapsed');
+        body.classList.toggle('expanded');
+        header.setAttribute('aria-expanded', !body.classList.contains('collapsed'));
+    }
+
+    /** Handle search input change */
+    let searchDebounce = null;
+    function onBrainSearch() {
+        clearTimeout(searchDebounce);
+        searchDebounce = setTimeout(() => {
+            const query = document.getElementById('brain-search').value;
+            if (query.length < 2) {
+                KnowledgeIndex.setUI('ready', 
+                    KnowledgeIndex.indexed 
+                        ? '✅ Indexed ' + KnowledgeIndex.files.length + ' documents' 
+                        : '⏳ Press "Scan All Docs" to index knowledge base...'
+                );
+                document.getElementById('brain-results').innerHTML = '';
+                return;
+            }
+            if (!KnowledgeIndex.indexed) {
+                KnowledgeIndex.setUI('loading', '⏳ Press "Scan All Docs" first, then search...');
+                return;
+            }
+            const results = KnowledgeIndex.search(query);
+            KnowledgeIndex.renderResults(results, query);
+        }, 250);
+    }
+
+    /** Called when search input gets focus — auto-scan if not indexed */
+    function onBrainFocus() {
+        if (!KnowledgeIndex.indexed && KnowledgeIndex.files.length === 0) {
+            // Don't auto-scan on focus to avoid blocking the workshop
+            // Just show the scan button more prominently
+            document.getElementById('brain-search').focus();
+        }
+    }
+
+    /** Discover and index all docs files */
+    async function scanKnowledgeBase() {
+        const btn = document.getElementById('brain-scan-btn');
+        btn.disabled = true;
+        btn.textContent = '⏳ Scanning...';
+        
+        try {
+            await KnowledgeIndex.scan();
+            // After scanning, if there's text in the search box, run search
+            const query = document.getElementById('brain-search').value;
+            if (query.length >= 2) {
+                onBrainSearch();
+            }
+        } catch(e) {
+            KnowledgeIndex.setUI('ready', '⚠️ Scan failed: ' + e.message);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = '🔄 Rescan Docs';
+        }
+    }
+
+    /** Filter by category */
+    function filterCategory(category, btnEl) {
+        KnowledgeIndex.currentCategory = category;
+        
+        // Update button states
+        document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+        btnEl.classList.add('active');
+        
+        // Re-run search if there's an active query
+        const query = document.getElementById('brain-search').value;
+        if (query.length >= 2 && KnowledgeIndex.indexed) {
+            onBrainSearch();
+        }
+    }
+
+    /** Open a document in a new tab */
+    function openDocument(path) {
+        // Resolve relative to current origin
+        const url = '/' + path.replace(/^\//, '');
+        window.open(url, '_blank', 'noopener');
+    }
+
+</script>
+</body>
+</html>
